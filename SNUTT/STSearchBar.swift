@@ -18,12 +18,12 @@ class STSearchBar: UISearchBar, UISearchBarDelegate{
             if isEditingTag {
                 self.returnKeyType = .done
                 self.reloadInputViews()
-                self.setImage(UIImage(named: "icon_tag_gray"), for: .search, state: UIControlState())
+                self.setImage(UIImage(named: "icon_tag_gray"), for: .search, state: UIControl.State())
                 searchController.searchToolbarView.setEditingTag(true)
             } else {
                 self.returnKeyType = .search
                 self.reloadInputViews()
-                self.setImage(nil, for: .search, state: UIControlState())
+                self.setImage(nil, for: .search, state: UIControl.State())
                 searchController.searchToolbarView.setEditingTag(false)
             }
         }
@@ -118,7 +118,7 @@ class STSearchBar: UISearchBar, UISearchBarDelegate{
             searchController.state = .editingQuery(query, tagList, searchController.FilteredList)
         } else {
              if case .loading(let request) = searchController.state {
-                request.cancel()
+                request.dispose()
             }
             searchController.state = .editingQuery(nil, [], [])
         }

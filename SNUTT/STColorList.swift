@@ -8,8 +8,7 @@
 
 import Foundation
 
-
-class STColorList : NSObject, NSCoding {
+struct STColorList : Codable {
 
     var colorList : [STColor] = []
     var nameList : [String] = []
@@ -23,18 +22,4 @@ class STColorList : NSObject, NSCoding {
             self.nameList = nameList
         }
     }
-
-    func encode(with coder: NSCoder) {
-        coder.encode(colorList.dictionaryValue(), forKey: "colorList")
-        coder.encode(nameList, forKey: "nameList")
-    }
-
-    required convenience init?(coder decoder: NSCoder) {
-        guard let colorList = [STColor](dictionary: decoder.decodeObject(forKey: "colorList") as? [NSDictionary]),
-            let nameList = decoder.decodeObject(forKey: "nameList") as? [String] else {
-                return nil
-        }
-        self.init(colorList: colorList, nameList: nameList)
-    }
-    
 }

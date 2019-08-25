@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum STTagType : String {
+enum STTagType : String, Codable {
     case Classification = "classification"
     case Department = "department"
     case AcademicYear = "academic_year"
@@ -50,29 +50,7 @@ enum STTagType : String {
     }
 }
 
-struct STTag : DictionaryRepresentable {
+struct STTag : Codable {
     var type : STTagType
     var text : String
-    init(type: STTagType, text: String) {
-        self.type = type
-        self.text = text
-    }
-    
-    //MARK: DictionaryRepresentable
-    
-    func dictionaryValue() -> NSDictionary {
-        let representation : [String: Any] = ["type": type.rawValue, "text": text]
-        return representation as NSDictionary
-    }
-    init?(dictionary: NSDictionary?) {
-        guard let values = dictionary else {return nil}
-        if let type = STTagType(raw: values["type"] as? String),
-            let text = values["text"] as? String {
-                    self.type = type
-                    self.text = text
-        } else {
-            return nil
-        }
-    }
-    
 }

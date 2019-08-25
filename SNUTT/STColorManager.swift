@@ -6,36 +6,40 @@
 //  Copyright © 2017년 WaffleStudio. All rights reserved.
 //
 
-class STColorManager {
+import RxSwift
+import RxCocoa
 
-    // MARK: Singleton
+class STColorManager: ReactiveCompatible {
 
-    fileprivate static var sharedManager : STColorManager? = nil
-    static var sharedInstance : STColorManager{
-        get {
-            if sharedManager == nil {
-                sharedManager = STColorManager()
-            }
-            return sharedManager!
-        }
-    }
-
-    fileprivate init() {
+    init() {
         self.loadData()
         #if TODAY_EXTENSION
         #else
-            self.updateData()
+        self.updateData()
         #endif
     }
 
-    var colorList: STColorList!
+    let colorListSubject = BehaviorRelay<STColorList>(value: STColorList(colorList: [], nameList: []))
+
+    var colorList: STColorList {
+        get {
+            return colorListSubject.value
+        }
+    }
 
     func loadData() {
-        colorList = STDefaults[.colorList] ?? STColorList(colorList: [], nameList: [])
+        if let colorList = STDefaults[.colorList] {
+            colorListSubject.accept(colorList)
+        }
     }
 
     func saveData() {
-        STDefaults[.colorList] = colorList
+        STDefaults[.colorList] = colorListSubject.value
     }
-    
+}
+
+extension Reactive where Base == STColorManager {
+    var colorList: Observable<STColorList> {
+        return base.colorListSubject.asObservable()
+    }
 }

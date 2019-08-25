@@ -18,13 +18,13 @@ class STSearchEmptyInfoView: UIView {
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleIconTap))
         searchIcon.addGestureRecognizer(tapGesture)
         searchIcon.isUserInteractionEnabled = true
-        helpViewButton.buttonPressAction = { _ in
+        helpViewButton.buttonPressAction = { 
             self.searchController.showInfo = true
             self.searchController.tableView.reloadEmptyDataSet()
         }
     }
 
-    func handleIconTap(sender: UITapGestureRecognizer) {
+    @objc func handleIconTap(sender: UITapGestureRecognizer) {
         searchController.setFocusToSearch()
     }
 }

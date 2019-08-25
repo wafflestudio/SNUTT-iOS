@@ -8,8 +8,15 @@
 
 import UIKit
 import Alamofire
+import RxSwift
 
 class STTimetableListController: UITableViewController {
+
+    let courseBookListManager = AppContainer.resolver.resolve(STCourseBookListManager.self)!
+    let timetableManager = AppContainer.resolver.resolve(STTimetableManager.self)!
+    let networkProvider = AppContainer.resolver.resolve(STNetworkProvider.self)!
+    let errorHandler = AppContainer.resolver.resolve(STErrorHandler.self)!
+    let disposeBag = DisposeBag()
 
     struct Section {
         var timetableList : [STTimetable]
@@ -21,12 +28,14 @@ class STTimetableListController: UITableViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        STNetworking.getTimetableList({ list in
-            self.timetableList = list
-            self.reloadList()
-        }, failure: {
-            self.dismiss(animated: true, completion: nil)
-        })
+        networkProvider.rx.request(STTarget.GetTimetableList())
+            .subscribe(onSuccess: { [weak self] list in
+                self?.timetableList = list
+                self?.reloadList()
+                }, onError: { [weak self] err in
+                    self?.errorHandler.apiOnError(err)
+                    self?.dismiss(animated: true, completion: nil)
+            }).disposed(by: disposeBag)
     }
     
     override func viewWillAppear(_ animated: Bool) {
@@ -49,22 +58,28 @@ class STTimetableListController: UITableViewController {
         let newTimetable = STTimetable(courseBook: courseBook, title: title)
         timetableList.append(newTimetable)
         reloadList()
-        STNetworking.createTimetable(title, courseBook: courseBook, done: { list in
-            self.timetableList = list
-            self.reloadList()
-        }, failure: { _ in
-            let index = self.timetableList.index(of: newTimetable)
-            self.timetableList.remove(at: index!)
-        })
+        let quarter = courseBook.quarter
+        networkProvider.rx.request(STTarget.CreateTimetable(params: .init(title: title, year: quarter.year, semester: quarter.semester)))
+            .subscribe(onSuccess: { [weak self] list in
+                self?.timetableList = list
+                self?.reloadList()
+                }, onError: { [weak self] error in
+                    guard let self = self else { return }
+                    self.errorHandler.apiOnError(error)
+                    let index = self.timetableList.index(of: newTimetable)
+                    self.timetableList.remove(at: index!)
+                    self.reloadList()
+            })
+            .disposed(by: disposeBag)
     }
     
-    func reloadList() {
+    @objc func reloadList() {
         self.updateSectionedList()
         self.tableView.reloadData()
     }
     
     func updateSectionedList() {
-        let courseBookList = STCourseBookList.sharedInstance.courseBookList
+        let courseBookList = courseBookListManager.courseBookList
         sectionList = courseBookList.map({ courseBook in
             return Section.init(timetableList:
                 timetableList.filter({ timetable in
@@ -92,7 +107,7 @@ class STTimetableListController: UITableViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: "STTimetableListCell", for: indexPath)
         if let timetable = getTimetable(from: indexPath) {
             cell.textLabel?.text = timetable.title
-            if STTimetableManager.sharedInstance.currentTimetable?.id == timetable.id {
+            if timetableManager.currentTimetable?.id == timetable.id {
                 cell.accessoryType = .checkmark
             } else {
                 cell.accessoryType = .none
@@ -127,15 +142,10 @@ class STTimetableListController: UITableViewController {
         guard let id = getTimetable(from: indexPath)?.id else {
             return
         }
-        STNetworking.getTimetable(id, done: { timetable in
-            if (timetable == nil) {
-                STAlertView.showAlert(title: "시간표 로딩 실패", message: "선택한 시간표가 서버에 존재하지 않습니다.")
-            }
-            STTimetableManager.sharedInstance.currentTimetable = timetable
-            self.navigationController?.popViewController(animated: true)
-        }, failure: { _ in
-
-        })
+        timetableManager.getTimetable(id: id)
+            .subscribe(onCompleted: { [weak self] in
+                self?.navigationController?.popViewController(animated: true)
+            }).disposed(by: disposeBag)
     }
     
     // Override to support conditional editing of the table view.
@@ -144,7 +154,7 @@ class STTimetableListController: UITableViewController {
             return false
         }
         if timetable.isLoaded {
-            if STTimetableManager.sharedInstance.currentTimetable?.id == timetable.id  {
+            if timetableManager.currentTimetable?.id == timetable.id  {
                 return false
             }
             return true
@@ -154,27 +164,26 @@ class STTimetableListController: UITableViewController {
     }
     
     // Override to support editing the table view.
-    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
             guard let timetable = getTimetable(from: indexPath), let id = timetable.id else {
                 return
             }
-            STNetworking.deleteTimetable(id, done: {
-                guard let index = self.timetableList.index(of: timetable) else {
-                    return
-                }
-                let section = self.sectionList.filter({ section in section.timetableList.contains(timetable)})
-                self.timetableList.remove(at: index)
-                self.updateSectionedList()
-                if section.count > 0 && section.first!.timetableList.count > 1 {
-                    self.tableView.deleteRows(at: [indexPath], with: .fade)
-                } else {
-                    self.tableView.reloadRows(at: [indexPath], with: .fade)
-                }
-            }, failure: { _ in
-                
-            })
-            
+            networkProvider.rx.request(STTarget.DeleteTimetable(id: id))
+                .subscribe(onSuccess: { _ in
+                    guard let index = self.timetableList.index(of: timetable) else {
+                        return
+                    }
+                    let section = self.sectionList.filter({ section in section.timetableList.contains(timetable)})
+                    self.timetableList.remove(at: index)
+                    self.updateSectionedList()
+                    if section.count > 0 && section.first!.timetableList.count > 1 {
+                        self.tableView.deleteRows(at: [indexPath], with: .fade)
+                    } else {
+                        self.tableView.reloadRows(at: [indexPath], with: .fade)
+                    }
+                }, onError: errorHandler.apiOnError)
+                .disposed(by: disposeBag)
         }
     }
     

@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct STTime {
+struct STTime : Hashable {
     var day : STDay
     var startPeriod : Double
     var duration : Double

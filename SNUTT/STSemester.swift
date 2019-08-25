@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum STSemester : Int {
+enum STSemester : Int, Codable {
     case first = 1, summer, second, winter
     
     static let allValues = [first, summer, second, winter]
@@ -33,6 +33,6 @@ enum STSemester : Int {
 
 extension STSemester : Comparable {}
 
-func <<T: RawRepresentable where T.RawValue: Comparable>(a: T, b: T) -> Bool {
+func <<T: RawRepresentable>(a: T, b: T) -> Bool where T.RawValue: Comparable {
     return a.rawValue < b.rawValue
 }

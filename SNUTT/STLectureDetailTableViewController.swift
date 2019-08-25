@@ -8,9 +8,9 @@
 
 import UIKit
 import ChameleonFramework
+import RxSwift
 
 class STLectureDetailTableViewController: STSingleLectureTableViewController {
-    
     var lecture : STLecture!
     var editable : Bool = false
     
@@ -154,37 +154,41 @@ class STLectureDetailTableViewController: STSingleLectureTableViewController {
         return false
     }
     
-    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
             currentLecture.classList.remove(at: indexPath.row)
             tableView.deleteRows(at: [indexPath], with: .automatic)
         }
     }
     
-    func editBarButtonClicked() {
+    @objc func editBarButtonClicked() {
         editable = true
         reloadDataWithAnimation()
         self.navigationItem.setRightBarButton(saveBarButton, animated: true)
         self.navigationItem.setLeftBarButton(cancelBarButton, animated: true)
     }
     
-    func saveBarButtonClicked() {
+    @objc func saveBarButtonClicked() {
         dismissKeyboard()
         let loadingView = STAlertView.showLoading(title: "저장 중")
         let oldLecture = lecture!
-        STTimetableManager.sharedInstance.updateLecture(oldLecture, newLecture: currentLecture, done: {
-            self.editable = false
-            self.reloadDataWithAnimation()
-            self.navigationItem.setRightBarButton(self.editBarButton, animated: true)
-            self.navigationItem.setLeftBarButton(nil, animated: true)
-            self.lecture = self.currentLecture
-            loadingView.dismiss(animated: true)
-        }, failure: {
-            loadingView.dismiss(animated: true)
-        })
+        timetableManager.updateLecture(oldLecture, newLecture: currentLecture)
+            .subscribe(onCompleted: { [weak self] in
+                guard let self = self else { return }
+                self.editable = false
+                self.reloadDataWithAnimation()
+                self.navigationItem.setRightBarButton(self.editBarButton, animated: true)
+                self.navigationItem.setLeftBarButton(nil, animated: true)
+                self.lecture = self.currentLecture
+                loadingView.dismiss(animated: true)
+                }, onError: { [weak self] err in
+                    self?.errorHandler.apiOnError(err)
+                    loadingView.dismiss(animated: true)
+            })
+            .disposed(by: disposeBag)
     }
     
-    func cancelBarButtonClicked() {
+    @objc func cancelBarButtonClicked() {
         editable = false
         dismissKeyboard()
         currentLecture = lecture
@@ -199,20 +203,24 @@ class STLectureDetailTableViewController: STSingleLectureTableViewController {
     }
     
     override func resetButtonClicked() {
-        STTimetableManager.sharedInstance.resetLecture(self.currentLecture) {
-            let lectureList = STTimetableManager.sharedInstance.currentTimetable!.lectureList
-            if let index = lectureList.index(where: { lecture in lecture.id == self.currentLecture.id}) {
-                self.currentLecture = lectureList[index]
-                self.lecture = lectureList[index]
-                self.navigationItem.setRightBarButton(self.editBarButton, animated: true)
-                self.navigationItem.setLeftBarButton(nil, animated: true)
-                UIView.transition(with: self.tableView, duration:0.35, options:.transitionCrossDissolve,
-                                          animations: {
-                                            self.editable = false
-                                            self.tableView.reloadData()
-                    }, completion: nil);
-            }
+        guard let currentLectureId = self.currentLecture.id else {
+            return
         }
+        timetableManager.resetLecture(currentLectureId)
+            .subscribe(onCompleted: {
+                let lectureList = self.timetableManager.currentTimetable!.lectureList
+                if let index = lectureList.index(where: { lecture in lecture.id == self.currentLecture.id}) {
+                    self.currentLecture = lectureList[index]
+                    self.lecture = lectureList[index]
+                    self.navigationItem.setRightBarButton(self.editBarButton, animated: true)
+                    self.navigationItem.setLeftBarButton(nil, animated: true)
+                    UIView.transition(with: self.tableView, duration:0.35, options:.transitionCrossDissolve,
+                                      animations: {
+                                        self.editable = false
+                                        self.tableView.reloadData()
+                    }, completion: nil);
+                }
+            }).disposed(by: disposeBag)
     }
     // MARK: - Table view data source
     

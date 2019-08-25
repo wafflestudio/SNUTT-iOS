@@ -8,47 +8,34 @@
 
 import Foundation
 import UIKit
-import SwiftyJSON
 
-struct STColor {
+// TODO: Do something about this
+struct STColor: Codable, Hashable {
+
+    var fg: String?
+    var bg: String?
     
-    var fgColor : UIColor
-    var bgColor : UIColor
+    var fgColor : UIColor {
+        if let fg = fg {
+            return UIColor(hexString: fg)
+        } else {
+            return UIColor(hexString: "#333333")
+        }
+    }
+    var bgColor : UIColor {
+        if let bg = bg {
+            return UIColor(hexString: bg)
+        } else {
+            return UIColor(hexString: "#E0E0E0")
+        }
+    }
     
     init() {
-        fgColor = UIColor(hexString: "#333333")
-        bgColor = UIColor(hexString: "#E0E0E0")
     }
     
     init(fgHex : String, bgHex : String) {
-        fgColor = UIColor(hexString: fgHex)
-        bgColor = UIColor(hexString: bgHex)
-    }
-
-    init(json: JSON) {
-        self.init(fgHex: json["fg"].stringValue, bgHex: json["bg"].stringValue)
-    }
-}
-
-extension STColor : Equatable {}
-
-func == (lhs : STColor, rhs : STColor) -> Bool  {
-    return lhs.fgColor.toHexString() == rhs.fgColor.toHexString() &&
-        lhs.bgColor.toHexString() == rhs.bgColor.toHexString()
-}
-
-extension STColor : DictionaryRepresentable {
-    func dictionaryValue() -> NSDictionary {
-        return ["fg": self.fgColor.toHexString(), "bg" : self.bgColor.toHexString()]
-    }
-
-    init?(dictionary: NSDictionary?) {
-        guard let values = dictionary else {return nil}
-        guard let fg = values["fg"] as? String, let bg = values["bg"] as? String else {
-            return nil
-        }
-        self.fgColor = UIColor(hexString: fg)
-        self.bgColor = UIColor(hexString: bg)
+        fg = fgHex
+        bg = bgHex
     }
 }
 

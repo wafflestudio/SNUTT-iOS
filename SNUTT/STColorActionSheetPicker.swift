@@ -17,21 +17,25 @@ class STColorActionSheetPicker : NSObject, ActionSheetCustomPickerDelegate {
     var selectedBlock: ((Int)->Void)?
     var initialColorIndex : Int
 
-    var colorList = STColorManager.sharedInstance.colorList.colorList
-    var nameList = STColorManager.sharedInstance.colorList.nameList
+    let colorManager = AppContainer.resolver.resolve(STColorManager.self)!
+
+    var colorList : [STColor]
+    var nameList : [String]
 
     init(initialColorIndex : Int, doneBlock: ((Int) -> Void)?, cancelBlock: (() -> Void)?, selectedBlock: ((Int)->Void)?) {
         self.doneBlock = doneBlock
         self.cancelBlock = cancelBlock
         self.selectedBlock = selectedBlock
         self.initialColorIndex = initialColorIndex
+        colorList = colorManager.colorList.colorList
+        nameList = colorManager.colorList.nameList
         super.init()
     }
 
     func pickerView(_ pickerView: UIPickerView, attributedTitleForRow row: Int, forComponent component: Int) -> NSAttributedString? {
         switch component {
         case 0:
-            let attribute = [NSForegroundColorAttributeName: colorList[row].bgColor.lighten(byPercentage: 0.4)]
+            let attribute = [NSAttributedString.Key.foregroundColor: colorList[row].bgColor.lighten(byPercentage: 0.4)]
             return NSAttributedString(string: nameList[row], attributes: attribute)
         default: return nil
         }

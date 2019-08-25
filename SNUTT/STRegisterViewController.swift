@@ -10,6 +10,7 @@ import UIKit
 import ChameleonFramework
 import SafariServices
 import Crashlytics
+import RxSwift
 
 class STRegisterViewController: UIViewController, UITextFieldDelegate {
 
@@ -26,8 +27,12 @@ class STRegisterViewController: UIViewController, UITextFieldDelegate {
     @IBOutlet weak var layoutConstraint2: NSLayoutConstraint!
     @IBOutlet weak var layoutConstraint3: NSLayoutConstraint!
 
-
     @IBOutlet weak var termView: UIView!
+
+    let errorHandler = AppContainer.resolver.resolve(STErrorHandler.self)!
+    let networkProvider = AppContainer.resolver.resolve(STNetworkProvider.self)!
+    let userManager = AppContainer.resolver.resolve(STUserManager.self)!
+    let disposeBag = DisposeBag()
 
     var textFields : [STLoginTextField] {
         get {
@@ -43,13 +48,13 @@ class STRegisterViewController: UIViewController, UITextFieldDelegate {
             textField.delegate = self
         }
 
-        registerButton.buttonPressAction = { _ in
+        registerButton.buttonPressAction = {
             self.registerButtonClicked()
         }
-        facebookButton.buttonPressAction = { _ in
+        facebookButton.buttonPressAction = {
             self.fbButtonClicked()
         }
-        backBtnView.buttonPressAction = { _ in
+        backBtnView.buttonPressAction = {
             self.dismiss(animated: true, completion: nil)
         }
 
@@ -57,8 +62,8 @@ class STRegisterViewController: UIViewController, UITextFieldDelegate {
         termView.addGestureRecognizer(termTapRecognizer)
 
         let center = NotificationCenter.default
-        center.addObserver(self, selector: #selector(self.keyboardWillShow), name: .UIKeyboardWillShow, object: nil)
-        center.addObserver(self, selector: #selector(self.keyboardWillHide), name: .UIKeyboardWillHide, object: nil)
+        center.addObserver(self, selector: #selector(self.keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
+        center.addObserver(self, selector: #selector(self.keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
 
         if (UIScreen.main.bounds.height > 700) {
             layoutConstraint1.constant = 104
@@ -76,14 +81,14 @@ class STRegisterViewController: UIViewController, UITextFieldDelegate {
         return true
     }
 
-    func keyboardWillShow(noti : NSNotification) {
-        UIView.animate(withDuration: 1.0, animations: { _ in
+    @objc func keyboardWillShow(noti : NSNotification) {
+        UIView.animate(withDuration: 1.0, animations: {
             self.backBtnView.alpha = 0.0
         })
     }
 
-    func keyboardWillHide(noti: NSNotification) {
-        UIView.animate(withDuration: 1.0, animations: { _ in
+    @objc func keyboardWillHide(noti: NSNotification) {
+        UIView.animate(withDuration: 1.0, animations: { 
             self.backBtnView.alpha = 1.0
         })
     }
@@ -109,7 +114,7 @@ class STRegisterViewController: UIViewController, UITextFieldDelegate {
 
     func fbButtonClicked() {
         self.view.endEditing(true)
-        STUser.tryFBLogin(controller:self)
+        userManager.tryFBLogin(controller: self)
     }
 
     func registerButtonClicked() {
@@ -143,20 +148,20 @@ class STRegisterViewController: UIViewController, UITextFieldDelegate {
         }
         let emailText = emailTextField.text
         let email = emailText == "" ? nil : emailText
-        STNetworking.registerLocal(id, password: password, email: email, done: { token, userId in
-            STDefaults[.token] = token
-            STDefaults[.userId] = userId
-            #if DEBUG
-            #else
-                Crashlytics.sharedInstance().setUserIdentifier(userId)
-            #endif
-            STUser.loadMainPage()
-        }, failure: { _ in
-            //STAlertView.showAlert(title: "회원가입 실패", message: "회원가입에 실패하였습니다.")
-        })
+        networkProvider.rx.request(STTarget.LocalRegister(params: .init(id: id, password: password, email: email)))
+            .subscribe(onSuccess: { [weak self] result in
+                STDefaults[.token] = result.token
+                STDefaults[.userId] = result.user_id
+                #if DEBUG
+                #else
+                Crashlytics.sharedInstance().setUserIdentifier(result.user_id)
+                #endif
+                self?.userManager.loadMainPage()
+            }, onError: errorHandler.apiOnError)
+            .disposed(by: disposeBag)
     }
 
-    func termLabelClicked() {
+    @objc func termLabelClicked() {
         self.view.endEditing(true)
         let url = STConfig.sharedInstance.baseURL + "/terms_of_service"
         let svc = SFSafariViewController(url: URL(string: url)!)

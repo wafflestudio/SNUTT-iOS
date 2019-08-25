@@ -9,8 +9,13 @@
 import UIKit
 import Alamofire
 import DZNEmptyDataSet
+import RxSwift
 
 class STNotificationTableViewController: UITableViewController, DZNEmptyDataSetDelegate, DZNEmptyDataSetSource {
+    let networkProvider = AppContainer.resolver.resolve(STNetworkProvider.self)!
+    let errorHandler = AppContainer.resolver.resolve(STErrorHandler.self)!
+    let disposeBag = DisposeBag()
+
     let heightForFetch : CGFloat = CGFloat(50.0)
 
     var notiList : [STNotification] = []
@@ -24,7 +29,7 @@ class STNotificationTableViewController: UITableViewController, DZNEmptyDataSetD
         super.viewDidLoad()
         STMainTabBarController.controller?.notificationController = self
 
-        tableView.rowHeight = UITableViewAutomaticDimension
+        tableView.rowHeight = UITableView.automaticDimension
         tableView.estimatedRowHeight = 27
         
         self.tableView.emptyDataSetSource = self;
@@ -37,7 +42,7 @@ class STNotificationTableViewController: UITableViewController, DZNEmptyDataSetD
         
         self.refreshControl = UIRefreshControl()
         
-        self.refreshControl?.addTarget(self, action: #selector(self.refreshList), for: UIControlEvents.valueChanged)
+        self.refreshControl?.addTarget(self, action: #selector(self.refreshList), for: UIControl.Event.valueChanged)
         
         // Uncomment the following line to preserve selection between presentations
         // self.clearsSelectionOnViewWillAppear = false
@@ -89,11 +94,7 @@ class STNotificationTableViewController: UITableViewController, DZNEmptyDataSetD
 
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         let notification = notiList[indexPath.row]
-        if let linkNotification = notification as? STLinkNotification {
-            guard let urlString = linkNotification.url,
-                let url = URL.init(string: urlString) else {
-                    return
-            }
+        if let urlString = notification.url, let url = URL.init(string: urlString) {
             UIApplication.shared.openURL(url)
         }
         tableView.deselectRow(at: indexPath, animated: true)
@@ -112,48 +113,54 @@ class STNotificationTableViewController: UITableViewController, DZNEmptyDataSetD
     
     func getMoreList() {
         loading = true
-        STNetworking.getNotificationList(numPerPage, offset: numPerPage * pageCnt, explicit: true, done: { list in
-            self.loading = false
-            self.notiList = self.notiList + list
-            self.pageCnt += 1
-            
-            if list.count < self.numPerPage {
-                self.isLast = true
-            }
-            self.tableView.reloadData()
-        }, failure: {
-            // There is no error other than networking error
-            self.loading = false
-        })
+        networkProvider.rx.request(STTarget.GetNotificationList(params: .init(limit: numPerPage, offset: numPerPage * pageCnt, explicit: true)))
+            .subscribe(onSuccess: { [weak self] list in
+                guard let self = self else { return }
+
+                self.loading = false
+                self.notiList = self.notiList + list
+                self.pageCnt += 1
+
+                if list.count < self.numPerPage {
+                    self.isLast = true
+                }
+                self.tableView.reloadData()
+                }, onError: { [weak self] err in
+                    self?.errorHandler.apiOnError(err)
+                    self?.loading = false
+            }).disposed(by: disposeBag)
     }
     
-    func refreshList() {
+    @objc func refreshList() {
         loading = true
         pageCnt = 0
         isLast = false
         STMainTabBarController.controller?.setNotiBadge(false)
-        STNetworking.getNotificationList(numPerPage, offset: numPerPage * pageCnt, explicit: true, done: { list in
-            self.loading = false
-            self.notiList = list
-            STMainTabBarController.controller?.setNotiBadge(false)
-            if list.count < self.numPerPage {
-                self.isLast = true
-            }
-            self.pageCnt += 1
-            
-            let formatter = DateFormatter()
-            formatter.dateStyle = DateFormatter.Style.medium
-            formatter.timeStyle = DateFormatter.Style.medium
-            
-            let title = "Last update: \(formatter.string(from: Date()))"
-            self.refreshControl?.attributedTitle = NSAttributedString(string: title)
-            
-            self.tableView.reloadData()
-            self.refreshControl?.endRefreshing()
-            }, failure: {
-                // There is no error other than networking error
+        networkProvider.rx.request(STTarget.GetNotificationList(params: .init(limit: numPerPage, offset: numPerPage * pageCnt, explicit: true)))
+            .subscribe(onSuccess: { [weak self] list in
+                guard let self = self else { return }
                 self.loading = false
-        })
+                self.notiList = list
+                STMainTabBarController.controller?.setNotiBadge(false)
+                if list.count < self.numPerPage {
+                    self.isLast = true
+                }
+                self.pageCnt += 1
+
+                let formatter = DateFormatter()
+                formatter.dateStyle = DateFormatter.Style.medium
+                formatter.timeStyle = DateFormatter.Style.medium
+
+                let title = "Last update: \(formatter.string(from: Date()))"
+                self.refreshControl?.attributedTitle = NSAttributedString(string: title)
+
+                self.tableView.reloadData()
+                self.refreshControl?.endRefreshing()
+                }, onError: { [weak self] err in
+                    self?.errorHandler.apiOnError(err)
+                    self?.loading = false
+            })
+            .disposed(by: disposeBag)
     }
     
     //MARK: DNZEmptyDataSet
@@ -168,8 +175,8 @@ class STNotificationTableViewController: UITableViewController, DZNEmptyDataSetD
     
     func title(forEmptyDataSet scrollView: UIScrollView!) -> NSAttributedString! {
         let text = "알림이 없습니다."
-        let attributes: [String : AnyObject] = [
-            NSFontAttributeName : UIFont.boldSystemFont(ofSize: 18.0)
+        let attributes: [NSAttributedString.Key : AnyObject] = [
+            NSAttributedString.Key.font : UIFont.boldSystemFont(ofSize: 18.0)
         ]
         return NSAttributedString(string: text, attributes: attributes)
     }
@@ -179,10 +186,10 @@ class STNotificationTableViewController: UITableViewController, DZNEmptyDataSetD
         let paragraph = NSMutableParagraphStyle()
         paragraph.lineBreakMode = .byWordWrapping
         paragraph.alignment = .center
-        let attributes: [String : AnyObject] = [
-            NSFontAttributeName : UIFont.systemFont(ofSize: 14.0),
-            NSForegroundColorAttributeName : UIColor.lightGray,
-            NSParagraphStyleAttributeName : paragraph
+        let attributes: [NSAttributedString.Key : AnyObject] = [
+            NSAttributedString.Key.font : UIFont.systemFont(ofSize: 14.0),
+            NSAttributedString.Key.foregroundColor : UIColor.lightGray,
+            NSAttributedString.Key.paragraphStyle : paragraph
         ]
         return NSAttributedString(string: text, attributes: attributes)
     }

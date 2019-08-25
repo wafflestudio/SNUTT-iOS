@@ -10,7 +10,6 @@ import UIKit
 import UserNotifications
 import Fabric
 import Crashlytics
-import SwiftyJSON
 import FBSDKCoreKit
 import Firebase
 import Alamofire
@@ -21,8 +20,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
 
+    let networkProvider = AppContainer.resolver.resolve(STNetworkProvider.self)!
+    let errorHandler = AppContainer.resolver.resolve(STErrorHandler.self)!
+    let userManager = AppContainer.resolver.resolve(STUserManager.self)!
 
-    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
+    func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
 
         #if DEBUG
         #else
@@ -31,51 +33,42 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
         FBSDKApplicationDelegate.sharedInstance().application(application, didFinishLaunchingWithOptions: launchOptions)
 
-        let path = Bundle.main.path(forResource: "config", ofType: "plist")!
-        let configAllDict = NSDictionary(contentsOfFile: path)!
+        STVersionManager().checkUpgrade()
 
+        // FIXME: there is no test server now...
         #if DEBUG
-            let infoName = "GoogleService-Info-Dev"
-            let configKey = "debug"
+            let infoName = "GoogleService-Info-Production"
         #elseif PRODUCTION
             let infoName = "GoogleService-Info-Production"
-            let configKey = "production"
         #else
-            let infoName = "GoogleService-Info-Dev"
-            let configKey = "staging"
+            let infoName = "GoogleService-Info-Production"
         #endif
 
-        print(infoName);
-        print(configKey);
-
-        let configDict = configAllDict.object(forKey: configKey) as! NSDictionary
         let filePath = Bundle.main.path(forResource: infoName, ofType: "plist")
         let options = FirebaseOptions(contentsOfFile: filePath!)
         FirebaseApp.configure(options: options!)
 
-        print(configDict.object(forKey: "api_server_url") as! String);
-
-        STConfig.sharedInstance.baseURL = configDict.object(forKey: "api_server_url") as! String
-
         setColors()
         
         // open main or login depending on the token
+        let viewController: UIViewController?
         if STDefaults[.token] != nil {
-            self.window?.rootViewController = UIStoryboard(name: "Main", bundle: Bundle.main).instantiateInitialViewController()
+            viewController = UIStoryboard(name: "Main", bundle: Bundle.main).instantiateInitialViewController()
         } else {
-            self.window?.rootViewController = UIStoryboard(name: "Login", bundle: Bundle.main).instantiateInitialViewController()
+            viewController = UIStoryboard(name: "Login", bundle: Bundle.main).instantiateInitialViewController()
         }
+
+        window = UIWindow(frame: UIScreen.main.bounds)
+        window?.rootViewController = viewController
+        window?.makeKeyAndVisible()
         
-        // set the api key base on config.plist
-        STDefaults[.apiKey] = configDict.object(forKey: "api_key") as! String
         if STDefaults[.token] != nil {
             STMainTabBarController.controller?.setNotiBadge(STDefaults[.shouldShowBadge])
-            STNetworking.getNotificationCount({ cnt in
-                STMainTabBarController.controller?.setNotiBadge(cnt != 0)
-                
-                }, failure: { _ in
-                    return
-            })
+            networkProvider.rx.request(STTarget.GetNotificationCount())
+                .map { $0.count }
+                .subscribe(onSuccess: { count in
+                    STMainTabBarController.controller?.setNotiBadge(count != 0)
+                }, onError: errorHandler.apiOnError)
         }
         
 
@@ -96,24 +89,17 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         application.registerForRemoteNotifications()
 
         if (InstanceID.instanceID().token() != nil) {
-            STUser.updateDeviceIdIfNeeded()
+            userManager.updateDeviceIdIfNeeded()
             connectToFcm()
         }
-
-        // For STColorList UserDefaults
-        NSKeyedArchiver.setClassName("STColorList", for: STColorList.self)
-        NSKeyedUnarchiver.setClass(STColorList.self, forClassName: "STColorList")
-        // For STFCMInfo UserDefaults
-        NSKeyedArchiver.setClassName("STFCMInfo", for: STFCMInfo.self)
-        NSKeyedUnarchiver.setClass(STFCMInfo.self, forClassName: "STFCMInfo")
-
         
         var fcmInfos = STDefaults[.shouldDeleteFCMInfos]?.infoList ?? []
         for fcmInfo in fcmInfos {
-            STNetworking.logOut(userId: fcmInfo.userId, fcmToken: fcmInfo.fcmToken, done: {
-                let infos = STDefaults[.shouldDeleteFCMInfos]?.infoList ?? []
-                STDefaults[.shouldDeleteFCMInfos] = STFCMInfoList(infoList: infos.filter( { info in info != fcmInfo}))
-            }, failure: nil)
+            let _ = networkProvider.rx.request(STTarget.LogOutDevice(params: .init(user_id: fcmInfo.userId, registration_id: fcmInfo.fcmToken )))
+                .subscribe(onSuccess: { _ in
+                    let infos = STDefaults[.shouldDeleteFCMInfos]?.infoList ?? []
+                    STDefaults[.shouldDeleteFCMInfos] = STFCMInfoList(infoList: infos.filter( { info in info != fcmInfo}))
+                })
         }
 
         return true
@@ -155,7 +141,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
     }
 
     func messaging(_ messaging: Messaging, didRefreshRegistrationToken fcmToken: String) {
-        STUser.updateDeviceIdIfNeeded()
+        userManager.updateDeviceIdIfNeeded()
         connectToFcm()
     }
 

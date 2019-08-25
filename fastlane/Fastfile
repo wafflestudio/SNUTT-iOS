@@ -1,0 +1,34 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+# For a list of all available plugins, check out
+#
+#     https://docs.fastlane.tools/plugins/available-plugins
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:ios)
+
+platform :ios do
+  desc "Push a new release build to the App Store"
+  lane :release do
+    match(
+      type: "appstore",
+      app_identifier: "com.wafflestudio.snutt",
+      force_for_new_devices: true
+    )
+    match(
+      type: "appstore",
+      app_identifier: "com.wafflestudio.snutt.SNUTT-Today",
+      force_for_new_devices: true
+    )
+    build_app(workspace: "SNUTT.xcworkspace", scheme: "SNUTT")
+    upload_to_app_store(skip_metadata: true, skip_screenshots: true)
+  end
+end

@@ -8,7 +8,7 @@
 
 import Foundation
 
-struct STQuarter : DictionaryRepresentable {
+struct STQuarter: Codable {
     var year : Int
     var semester : STSemester
     
@@ -24,22 +24,6 @@ struct STQuarter : DictionaryRepresentable {
     func longString() -> String {
         return String(year) + " " + semester.longString()
     }
-    
-    func dictionaryValue() -> NSDictionary {
-        let representation : [String: Any] = ["year": year, "semester": semester.rawValue]
-        return representation as NSDictionary
-    }
-    init?(dictionary: NSDictionary?) {
-        guard let values = dictionary else {return nil}
-        if let year = values["year"] as? Int,
-            let semester = STSemester(raw: values["semester"] as? Int) {
-                self.year = year
-                self.semester = semester
-        } else {
-            return nil
-        }
-    }
-    
 }
 
 extension STQuarter : Equatable, Comparable {}

@@ -7,12 +7,18 @@
 //
 
 import UIKit
-import B68UIFloatLabelTextField
+import RxSwift
+import RxSwiftExt
 
 class STSupportViewController: UIViewController {
 
     @IBOutlet weak var emailTextField: B68UIFloatLabelTextField!
     @IBOutlet weak var contentTextView: UITextView!
+
+    let networkProvider = AppContainer.resolver.resolve(STNetworkProvider.self)!
+    let errorHandler = AppContainer.resolver.resolve(STErrorHandler.self)!
+    let disposeBag = DisposeBag()
+
     override func viewDidLoad() {
         super.viewDidLoad()
 
@@ -26,17 +32,29 @@ class STSupportViewController: UIViewController {
     
 
     @IBAction func sendButtonClicked(_ sender: AnyObject) {
-        let actions = [UIAlertAction(title: "취소", style: .cancel, handler: nil),
-                       UIAlertAction(title: "전송", style: .default, handler: { action in
-            let loadingView = STAlertView.showLoading(title: "전송 중")
-            STNetworking.sendFeedback(self.emailTextField.text, message: self.contentTextView.text, done: {
-                loadingView.dismiss(animated: true, completion: {
-                    self.navigationController?.popViewController(animated: true)
-                })
-            }, failure: {
-                loadingView.dismiss(animated: true)
-            })
-        })]
+        let actions = [
+            UIAlertAction(title: "취소", style: .cancel, handler: nil),
+            UIAlertAction(title: "전송", style: .default, handler: { [weak self] action in
+                guard let self = self else { return }
+                let loadingView = STAlertView.showLoading(title: "전송 중")
+                self.networkProvider.rx.request(STTarget.SendFeedback(params: .init(
+                    message: self.contentTextView.text,
+                    email: self.emailTextField.text
+                    )))
+                    .do(onDispose: {
+                        if !loadingView.isBeingDismissed {
+                            loadingView.dismiss(animated: true)
+                        }
+                    })
+                    .subscribe(onSuccess: { _ in
+                        loadingView.dismiss(animated: true, completion: { [weak self] in
+                            self?.navigationController?.popViewController(animated: true)
+                        })
+                    }, onError: { [weak self] error in
+                        self?.errorHandler.apiOnError(error)
+                    })
+                    .disposed(by: self.disposeBag)
+            })]
 
         STAlertView.showAlert(title: "전송 확인", message: "개발자에게 메세지를 전송하시겠습니까?", actions: actions)
     }

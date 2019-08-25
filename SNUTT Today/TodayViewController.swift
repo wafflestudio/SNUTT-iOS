@@ -8,25 +8,19 @@
 
 import UIKit
 import NotificationCenter
-import SwiftyJSON
 import SwiftyUserDefaults
 
 class TodayViewController: UIViewController, NCWidgetProviding {
     //TODO: iOS 9 Testing
     
-    @IBOutlet weak var timetableView: STTimetableCollectionView!
+    @IBOutlet weak var timetableView: STTimetableView!
     var maxHeight : CGFloat =  400.0
 
     @IBOutlet weak var descriptionLabel: UILabel!
-    @IBOutlet weak var containerView: UIView!
 
     let sharedDefaults = UserDefaults(suiteName: "group.wafflestudio.TodayExtensionSharingDefaults")
 
     override func viewDidLoad() {
-        // For STColorList UserDefaults
-        NSKeyedArchiver.setClassName("STColorList", for: STColorList.self)
-        NSKeyedUnarchiver.setClass(STColorList.self, forClassName: "STColorList")
-
         super.viewDidLoad()
         guard let extensionContext = self.extensionContext else {
             return
@@ -35,6 +29,7 @@ class TodayViewController: UIViewController, NCWidgetProviding {
 
         updateTimetable()
         updateSetting()
+        updateColorList()
 
         extensionContext.widgetLargestAvailableDisplayMode = NCWidgetDisplayMode.expanded
         let displayMode = extensionContext.widgetActiveDisplayMode
@@ -44,57 +39,47 @@ class TodayViewController: UIViewController, NCWidgetProviding {
         NotificationCenter.default.addObserver(self, selector: #selector(userDefaultsDidChange), name: UserDefaults.didChangeNotification, object: nil)
     }
 
-    func userDefaultsDidChange (_ notification: Notification) {
+    @objc func userDefaultsDidChange (_ notification: Notification) {
         updateTimetable()
         updateSetting()
-        reloadData()
+        updateColorList()
     }
 
     func updateTimetable() {
-        if let dict = STDefaults[.currentTimetable] {
-            let timetable = STTimetable(json: JSON(dict))
-            timetableView.timetable = timetable
-        } else {
-            timetableView.timetable = nil
-        }
-    }
-
-    func reloadData() {
-        timetableView.reloadTimetable()
+        timetableView.setTimetable(STDefaults[.currentTimetable])
     }
 
     func updateSetting() {
+        let fitMode : STTimetableView.FitMode
         if STDefaults[.autoFit] {
-            timetableView.shouldAutofit = true
+            fitMode = .auto
         } else {
-            timetableView.shouldAutofit = false
+            let timeRange = STDefaults[.timeRange]
             let dayRange = STDefaults[.dayRange]
-            var columnHidden : [Bool] = []
-            for i in 0..<6 {
-                if dayRange[0] <= i && i <= dayRange[1] {
-                    columnHidden.append(false)
-                } else {
-                    columnHidden.append(true)
-                }
-            }
-            timetableView.columnHidden = columnHidden
-            timetableView.rowStart = Int(STDefaults[.timeRange][0])
-            timetableView.rowEnd = Int(STDefaults[.timeRange][1])
+            let spec = STTimetableView.FitSpec(
+                startPeriod: Int(timeRange[0]),
+                endPeriod: Int(timeRange[1]) + 1,
+                startDay: dayRange[0],
+                endDay: dayRange[1]
+            )
+            fitMode = .manual(spec: spec)
         }
+        timetableView.setFitMode(fitMode)
+    }
+
+    func updateColorList() {
+        let colorList = STDefaults[.colorList] ?? STColorList(colorList: [], nameList: [])
+        timetableView.setColorList(colorList)
     }
 
     func widgetActiveDisplayModeDidChange(_ activeDisplayMode: NCWidgetDisplayMode, withMaximumSize maxSize: CGSize){
         if (activeDisplayMode == NCWidgetDisplayMode.compact) {
             self.preferredContentSize = maxSize
-            timetableView.frame.size = maxSize
-            reloadData()
             timetableView.isHidden = true
             descriptionLabel.isHidden = false
         }
         else {
             self.preferredContentSize = CGSize(width: 0, height: maxHeight)
-            timetableView.frame.size = CGSize(width: 0, height: maxHeight)
-            reloadData()
             timetableView.isHidden = false
             descriptionLabel.isHidden = true
         }
@@ -104,7 +89,6 @@ class TodayViewController: UIViewController, NCWidgetProviding {
         DispatchQueue.main.async(execute: {
             self.updateTimetable()
             self.updateSetting()
-            self.reloadData()
         });
 
         completionHandler(NCUpdateResult.newData)

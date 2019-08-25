@@ -7,7 +7,6 @@
 //
 
 import Foundation
-import SwiftyJSON
 
 struct STLecture {
     var classification : String?
@@ -15,11 +14,7 @@ struct STLecture {
     var academicYear : String?
     var courseNumber : String?
     var lectureNumber : String?
-    var title : String = "" {
-        didSet {
-            titleBreakLine = title.breakOnlyAtNewLineAndSpace
-        }
-    }
+    var title : String = ""
     var credit : Int = 0
     var instructor : String = ""
     var quota : Int?
@@ -30,10 +25,15 @@ struct STLecture {
     var color : STColor? = nil
     var colorIndex: Int = 0
     var timeMask: [Int] = []
-    var titleBreakLine = ""
 
     func getColor() -> STColor {
-        let colorList = STColorManager.sharedInstance.colorList!
+        // TODO: need some thinking about this
+        #if TODAY_EXTENSION
+            let colorManager = STTodayColorManager.sharedInstance
+        #else
+            let colorManager = AppContainer.resolver.resolve(STColorManager.self)!
+        #endif
+        let colorList = colorManager.colorList
         if colorIndex == 0 {
             return color ?? STColor()
         } else if (colorIndex <= colorList.colorList.count && colorIndex >= 1) {
@@ -91,70 +91,67 @@ struct STLecture {
     init() {
     }
     
-    init(json data : JSON) {
-        classification = data["classification"].string
-        department = data["department"].string
-        academicYear = data["academic_year"].string
-        courseNumber = data["course_number"].string
-        lectureNumber = data["lecture_number"].string
-        title = data["course_title"].stringValue
-        titleBreakLine = title.breakOnlyAtNewLineAndSpace
-        credit = data["credit"].intValue
-        instructor = data["instructor"].stringValue
-        quota = data["quota"].int
-        remark = data["remark"].string
-        category = data["category"].string
-        timeMask = data["class_time_mask"].arrayValue.map{mask in mask.intValue}
-        id = data["_id"].string
-        let colorJson = data["color"]
-        colorIndex = data["colorIndex"].intValue
-        if let fgHex = colorJson["fg"].string, let bgHex = colorJson["bg"].string {
-            color = STColor(fgHex: fgHex, bgHex: bgHex)
-        }
-
-        let listData = data["class_time_json"].arrayValue
-        for it in listData {
-            let time = STTime(day: it["day"].intValue, startPeriod: it["start"].doubleValue, duration: it["len"].doubleValue)
-            let singleClass = STSingleClass(time: time, place: it["place"].stringValue)
-            classList.append(singleClass)
-        }
-    }
-    
-    func toDictionary() -> [String : Any] {
-        
-        let classTimeJSON = classList.map{ singleClass in
-            return singleClass.toDictionary()
-        }
-        
-        var dict : [String: Any?] = [
-            "classification" : classification,
-            "department" : department,
-            "academic_year" : academicYear,
-            "course_number" : courseNumber,
-            "lecture_number" : lectureNumber,
-            "course_title" : title,
-            "credit" : credit,
-            "instructor" : instructor,
-            "quota" : quota,
-            "remark" : remark,
-            "category" : category,
-            "id" : id,
-            "class_time_json" : classTimeJSON,
-            "color" : color?.dictionaryValue(),
-            "colorIndex" : colorIndex,
-            ]
-        
-        for (key, value) in dict {
-            if (value == nil) {
-                dict.removeValue(forKey: key)
-            }
-        }
-        
-        return dict as! [String: AnyObject]
-    }
-    
     func isSameLecture(_ right : STLecture) -> Bool {
         return (courseNumber == right.courseNumber && lectureNumber == right.lectureNumber) && courseNumber != nil && lectureNumber != nil
+    }
+}
+
+extension STLecture: Codable {
+    private enum CodingKeys: String, CodingKey {
+        case classification
+        case department
+        case academic_year
+        case course_number
+        case lecture_number
+        case course_title
+        case credit
+        case instructor
+        case quota
+        case remark
+        case category
+        case _id
+        case class_time_json
+        case class_time_mask
+        case color
+        case colorIndex
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(classification, forKey: .classification)
+        try container.encodeIfPresent(department, forKey: .department)
+        try container.encodeIfPresent(academicYear, forKey: .academic_year)
+        try container.encodeIfPresent(courseNumber, forKey: .course_number)
+        try container.encode(title, forKey: .course_title)
+        try container.encodeIfPresent(credit, forKey: .credit)
+        try container.encodeIfPresent(instructor, forKey: .instructor)
+        try container.encodeIfPresent(quota, forKey: .quota)
+        try container.encodeIfPresent(remark, forKey: .remark)
+        try container.encodeIfPresent(category, forKey: .category)
+        try container.encode(timeMask, forKey: .class_time_mask)
+        try container.encodeIfPresent(id, forKey: ._id)
+        try container.encodeIfPresent(colorIndex, forKey: .colorIndex)
+        try container.encodeIfPresent(color, forKey: .color)
+        try container.encode(classList, forKey: .class_time_json)
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        classification = try container.decodeIfPresent(String.self, forKey: .classification)
+        department = try container.decodeIfPresent(String.self, forKey: .department)
+        academicYear = try container.decodeIfPresent(String.self, forKey: .academic_year)
+        courseNumber = try container.decodeIfPresent(String.self, forKey: .course_number)
+        title = try container.decode(String.self, forKey: .course_title)
+        credit = (try container.decodeIfPresent(Int.self, forKey: .credit)) ?? 0
+        instructor = (try container.decodeIfPresent(String.self, forKey: .instructor)) ?? ""
+        quota = (try container.decodeIfPresent(Int.self, forKey: .quota)) ?? 0
+        remark = try container.decodeIfPresent(String.self, forKey: .remark)
+        category = try container.decodeIfPresent(String.self, forKey: .category)
+        timeMask = try container.decode([Int].self, forKey: .class_time_mask)
+        id = try container.decodeIfPresent(String.self, forKey: ._id)
+        colorIndex = (try container.decodeIfPresent(Int.self, forKey: .colorIndex)) ?? 0
+        color = try? container.decode(STColor.self, forKey: .color)
+        classList = try container.decode([STSingleClass].self, forKey: .class_time_json)
     }
 }
 

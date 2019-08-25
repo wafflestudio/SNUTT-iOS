@@ -14,7 +14,7 @@ class STTagSearchInfoView: UIView {
     weak var searchController: STLectureSearchTableViewController!
     
     override func awakeFromNib() {
-        closeViewButton.buttonPressAction = { _ in
+        closeViewButton.buttonPressAction = {
             self.searchController.showInfo = false
             self.searchController.tableView.reloadEmptyDataSet();
         }

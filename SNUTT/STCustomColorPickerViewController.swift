@@ -22,7 +22,7 @@ class STCustomColorPickerViewController: UIViewController {
         // Do any additional setup after loading the view.
     }
 
-    override func willMove(toParentViewController parent: UIViewController?) {
+    override func willMove(toParent parent: UIViewController?) {
         if parent == nil {
             doneBlock(colorPickerView.color)
         }

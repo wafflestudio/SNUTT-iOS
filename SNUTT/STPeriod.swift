@@ -16,6 +16,16 @@ extension Double {
             return "\(Int(self)+8):30"
         }
     }
+
+    func shortPeriodString() -> String {
+        return "\(Int(self)+8)"
+    }
+}
+
+extension Int {
+    func shortPeriodSring() -> String {
+        return "\(self+8)"
+    }
 }
 
 class STPeriod {

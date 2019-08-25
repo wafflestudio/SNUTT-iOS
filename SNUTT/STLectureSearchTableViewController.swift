@@ -9,22 +9,29 @@
 import UIKit
 import Alamofire
 import DZNEmptyDataSet
+import RxSwift
 
 class STLectureSearchTableViewController: UIViewController,UITableViewDelegate, UITableViewDataSource, DZNEmptyDataSetSource, DZNEmptyDataSetDelegate {
     
     @IBOutlet weak var searchBar : STSearchBar!
-    
     @IBOutlet weak var tableView: UITableView!
-    
     @IBOutlet weak var tagCollectionView: STTagCollectionView!
     @IBOutlet weak var tagTableView: STTagListView!
-    
     @IBOutlet weak var tagCollectionViewConstraint: NSLayoutConstraint!
-    
     @IBOutlet var searchToolbarView: STLectureSearchToolbarView!
-    
-    @IBOutlet weak var timetableView: STTimetableCollectionView!
-    var FilteredList : [STLecture] = []
+    @IBOutlet weak var timetableView: STTimetableView!
+
+    let timetableManager = AppContainer.resolver.resolve(STTimetableManager.self)!
+    let settingManager = AppContainer.resolver.resolve(STSettingManager.self)!
+    let colorManager = AppContainer.resolver.resolve(STColorManager.self)!
+    let networkProvider = AppContainer.resolver.resolve(STNetworkProvider.self)!
+    let errorHandler = AppContainer.resolver.resolve(STErrorHandler.self)!
+    let disposeBag = DisposeBag()
+    var FilteredList : [STLecture] = [] {
+        didSet(oldVal) {
+            print(oldVal)
+        }
+    }
     var pageNum : Int = 0
     var perPage : Int = 20
     var isLast : Bool = false
@@ -32,23 +39,18 @@ class STLectureSearchTableViewController: UIViewController,UITableViewDelegate, 
     enum SearchState {
         case empty
         case editingQuery(String?, [STTag], [STLecture])
-        case loading(Request)
+        case loading(Disposable)
         case loaded(String, [STTag])
     }
     var state : SearchState = SearchState.empty
     
     func reloadData() {
         tableView.reloadData()
-        STTimetableManager.sharedInstance.setTemporaryLecture(nil, object: self)
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        
-        STEventCenter.sharedInstance.addObserver(self, selector: "timetableSwitched", event: STEvent.CurrentTimetableSwitched, object: nil)
-        STEventCenter.sharedInstance.addObserver(self, selector: "reloadTimetable", event: STEvent.CurrentTimetableChanged, object: nil)
-        STEventCenter.sharedInstance.addObserver(self, selector: "reloadTempLecture", event: STEvent.CurrentTemporaryLectureChanged, object: nil)
-        
+
         tableView.emptyDataSetSource = self;
         tableView.emptyDataSetDelegate = self;
         
@@ -67,11 +69,31 @@ class STLectureSearchTableViewController: UIViewController,UITableViewDelegate, 
         //Tag Button to KeyboardToolbar
         
         searchBar.inputAccessoryView = searchToolbarView
+        
+        timetableManager.rx.currentTimetable
+            .map { $0?.id }
+            .distinctUntilChanged()
+            .subscribe(onNext: { [weak self] _ in
+                self?.timetableSwitched()
+            }).disposed(by: disposeBag)
 
-        timetableView.timetable = STTimetableManager.sharedInstance.currentTimetable
-        timetableView.showTemporary = true
-        settingChanged()
-        STEventCenter.sharedInstance.addObserver(self, selector: "settingChanged", event: STEvent.SettingChanged, object: nil)
+        Observable.combineLatest(
+            timetableManager.rx.currentTimetable,
+            timetableManager.rx.currentTemporaryLecture
+        ) { a, b in (a,b)}
+            .subscribe(onNext: { [weak self] (timetable, tempLecture) in
+                self?.timetableView.setTimetable(timetable, tempLecture: tempLecture)
+            }).disposed(by: disposeBag)
+
+        settingManager.rx.fitMode
+            .subscribe(onNext: {[weak self] fitMode in
+                self?.timetableView.setFitMode(fitMode)
+            }).disposed(by: disposeBag)
+
+        colorManager.rx.colorList
+            .subscribe(onNext: {[weak self] colorList in
+                self?.timetableView.setColorList(colorList)
+            }).disposed(by: disposeBag)
     }
     
     required init?(coder aDecoder: NSCoder) {
@@ -91,72 +113,99 @@ class STLectureSearchTableViewController: UIViewController,UITableViewDelegate, 
         super.viewWillDisappear(animated)
     }
 
-    func settingChanged() {
-        if STDefaults[.autoFit] {
-            timetableView.shouldAutofit = true
-        } else {
-            timetableView.shouldAutofit = false
-            let dayRange = STDefaults[.dayRange]
-            var columnHidden : [Bool] = []
-            for i in 0..<6 {
-                if dayRange[0] <= i && i <= dayRange[1] {
-                    columnHidden.append(false)
-                } else {
-                    columnHidden.append(true)
-                }
-            }
-            timetableView.columnHidden = columnHidden
-            timetableView.rowStart = Int(STDefaults[.timeRange][0])
-            timetableView.rowEnd = Int(STDefaults[.timeRange][1])
-        }
-        timetableView.reloadTimetable()
-    }
-    
     func getLectureList(_ searchString : String) {
         // This is for saving the request
         isLast = false
         let tagList = tagCollectionView.tagList
-        let mask = searchToolbarView.isEmptyTime ? STTimetableManager.sharedInstance.currentTimetable?.timetableReverseTimeMask() : nil
-        let request = Alamofire.request(STSearchRouter.search(query: searchString, tagList: tagList, mask: mask, offset: 0, limit: perPage))
-        state = .loading(request)
-        request.responseWithDone({ statusCode, json in
-            self.FilteredList = json.arrayValue.map { data in
-                return STLecture(json: data)
-            }
-            self.state = .loaded(searchString, tagList)
-            if json.arrayValue.count < self.perPage {
-                self.isLast = true
-            }
-            self.pageNum = 1
-            self.reloadData()
-        }, failure: { _ in
-            self.state = .empty
-            self.FilteredList = []
-            self.reloadData()
-        })
+        let mask = searchToolbarView.isEmptyTime ? timetableManager.currentTimetable?.timetableReverseTimeMask() : nil
+        guard let quarter = timetableManager.currentTimetable?.quarter else { return }
+
+        let disposable = requestSearch(quarter: quarter, query: searchString, tagList: tagList, mask: mask, offset: 0, limit: perPage)
+            .subscribe(onSuccess: { [weak self] lectureList in
+                guard let self = self else { return }
+                self.FilteredList = lectureList
+                self.state = .loaded(searchString, tagList)
+                if lectureList.count < self.perPage {
+                    self.isLast = true
+                }
+                self.pageNum = 1
+                self.reloadData()
+            }, onError: { [weak self] err in
+                guard let self = self else { return }
+                self.errorHandler.apiOnError(err)
+                self.state = .empty
+                self.FilteredList = []
+                self.reloadData()
+            })
+        state = .loading(disposable)
+        disposeBag.insert(disposable)
     }
     
     func getMoreLectureList(_ searchString: String) {
         let tagList = tagCollectionView.tagList
-        let mask = searchToolbarView.isEmptyTime ? STTimetableManager.sharedInstance.currentTimetable?.timetableReverseTimeMask() : nil
-        let request = Alamofire.request(STSearchRouter.search(query: searchString, tagList: tagList, mask: mask, offset: perPage * pageNum, limit: perPage))
-        state = .loading(request)
-        request.responseWithDone({ statusCode, json in
-            self.state = .loaded(searchString, tagList)
-            self.FilteredList = self.FilteredList + json.arrayValue.map { data in
-                return STLecture(json: data)
-            }
-            if json.arrayValue.count < self.perPage {
-                self.isLast = true
-            }
-            self.pageNum = self.pageNum + 1
-            self.reloadData()
-            }, failure: { _ in
-                self.state = .empty
-                self.FilteredList = []
-                self.reloadData()
-        })
+        let mask = searchToolbarView.isEmptyTime ? timetableManager.currentTimetable?.timetableReverseTimeMask() : nil
+        guard let quarter = timetableManager.currentTimetable?.quarter else { return }
 
+        let disposable = requestSearch(quarter: quarter, query: searchString, tagList: tagList, mask: mask, offset: perPage * pageNum, limit: perPage)
+            .subscribe(onSuccess: { [weak self] lectureList in
+                guard let self = self else { return }
+                self.state = .loaded(searchString, tagList)
+                self.FilteredList = self.FilteredList + lectureList
+                if lectureList.count < self.perPage {
+                    self.isLast = true
+                }
+                self.pageNum = self.pageNum + 1
+                self.reloadData()
+                }, onError: { [weak self] err in
+                    guard let self = self else { return }
+                    self.errorHandler.apiOnError(err)
+                    self.state = .empty
+                    self.FilteredList = []
+                    self.reloadData()
+            })
+        state = .loading(disposable)
+        disposeBag.insert(disposable)
+    }
+
+    private func requestSearch(quarter: STQuarter, query: String, tagList: [STTag], mask: [Int]?, offset: Int, limit: Int) -> Single<[STLecture]>{
+        let year = quarter.year
+        let semester = quarter.semester
+        var credit : [Int] = []
+        var instructor : [String] = []
+        var department : [String] = []
+        var academicYear : [String] = []
+        var classification : [String] = []
+        var category : [String] = []
+        for tag in tagList {
+            switch tag.type {
+            case .Credit:
+                credit.append(Int(tag.text.trimmingCharacters(in: CharacterSet.decimalDigits.inverted))!)
+            case .Department:
+                department.append(tag.text)
+            case .Instructor:
+                instructor.append(tag.text)
+            case .AcademicYear:
+                academicYear.append(tag.text)
+            case .Classification:
+                classification.append(tag.text)
+            case .Category:
+                category.append(tag.text)
+            }
+        }
+        let params = STTarget.SearchLectures.Params(
+            title: query,
+            year: year,
+            semester: semester,
+            credit: credit,
+            instructor: instructor,
+            department: department,
+            academic_year: academicYear,
+            classification: classification,
+            category: category,
+            offset: offset,
+            limit: limit
+        )
+        return networkProvider.rx.request(STTarget.SearchLectures(params: params))
     }
 
     func setFocusToSearch() {
@@ -179,26 +228,16 @@ class STLectureSearchTableViewController: UIViewController,UITableViewDelegate, 
         state = .empty
         searchBar.text = ""
         FilteredList = []
-        self.timetableView.timetable = STTimetableManager.sharedInstance.currentTimetable
         tagTableView.filteredList = []
         tagCollectionView.tagList = []
         searchToolbarView.currentTagType = nil
         searchToolbarView.isEmptyTime = false
         
-        self.reloadTimetable()
         self.reloadData()
         tagTableView.hide()
         tagCollectionView.reloadData()
     }
-    
-    func reloadTimetable() {
-        self.timetableView.reloadTimetable()
-    }
-    
-    func reloadTempLecture() {
-        self.timetableView.reloadTempLecture()
-    }
-    
+
     override func didReceiveMemoryWarning() {
         super.didReceiveMemoryWarning()
         // Dispose of any resources that can be recreated.
@@ -233,7 +272,7 @@ class STLectureSearchTableViewController: UIViewController,UITableViewDelegate, 
     func searchBarSearchButtonClicked(_ query : String) {
         switch state {
         case .loading(let request):
-            request.cancel()
+            request.dispose()
         default:
             break
         }
@@ -248,7 +287,7 @@ class STLectureSearchTableViewController: UIViewController,UITableViewDelegate, 
             searchBar.text = ""
             tagCollectionView.tagList = []
         case .loading(let request):
-            request.cancel()
+            request.dispose()
             state = .empty
             FilteredList = []
             searchBar.text = ""
@@ -263,13 +302,13 @@ class STLectureSearchTableViewController: UIViewController,UITableViewDelegate, 
     
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         willSelectRow = false
-        STTimetableManager.sharedInstance.setTemporaryLecture(FilteredList[indexPath.row], object: self)
+        timetableManager.setTemporaryLecture(FilteredList[indexPath.row])
         //TimetableCollectionViewController.datasource.addLecture(FilteredList[indexPath.row])
         
     }
     func tableView(_ tableView: UITableView, didDeselectRowAt indexPath: IndexPath) {
-        if STTimetableManager.sharedInstance.currentTimetable?.temporaryLecture == FilteredList[indexPath.row] && !willSelectRow {
-            STTimetableManager.sharedInstance.setTemporaryLecture(nil, object: self)
+        if timetableManager.currentTemporaryLecture == FilteredList[indexPath.row] && !willSelectRow {
+            timetableManager.setTemporaryLecture(nil)
         }
     }
     func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
@@ -283,11 +322,11 @@ class STLectureSearchTableViewController: UIViewController,UITableViewDelegate, 
         if tagCollectionView.tagList.count == 1 {
             let indexPath = IndexPath(row: 0, section: 0)
             tagCollectionView.reloadData()
-            tagCollectionView.scrollToItem(at: indexPath, at: UICollectionViewScrollPosition.right, animated: false)
+            tagCollectionView.scrollToItem(at: indexPath, at: UICollectionView.ScrollPosition.right, animated: false)
         } else {
             let indexPath = IndexPath(row: tagCollectionView.tagList.count - 1, section: 0)
             tagCollectionView.insertItems(at: [indexPath])
-            tagCollectionView.scrollToItem(at: indexPath, at: UICollectionViewScrollPosition.right, animated: true)
+            tagCollectionView.scrollToItem(at: indexPath, at: UICollectionView.ScrollPosition.right, animated: true)
         }
         tagCollectionView.setHidden()
         tagTableView.hide()
@@ -349,7 +388,7 @@ class STLectureSearchTableViewController: UIViewController,UITableViewDelegate, 
     }
 
 
-    func dismissKeyboard() {
+    @objc func dismissKeyboard() {
         if case let .editingQuery(query, tagList, lectureList) = state {
             searchBar.resignFirstResponder()
             searchBar.isEditingTag = false

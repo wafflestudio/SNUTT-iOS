@@ -8,8 +8,14 @@
 
 import UIKit
 import TTRangeSlider
+import RxSwift
+import RxCocoa
 
 class STTimetableSettingViewController: UITableViewController {
+
+    let settingManager = AppContainer.resolver.resolve(STSettingManager.self)!
+
+    let disposeBag = DisposeBag()
 
     @IBOutlet weak var trimmingSwitch: UISwitch!
     @IBOutlet weak var daySlider: TTRangeSlider!
@@ -20,11 +26,12 @@ class STTimetableSettingViewController: UITableViewController {
     func setInitialUI() {
         let dayRange = STDefaults[.dayRange]
         let timeRange = STDefaults[.timeRange]
-        
+        trimmingSwitch.isOn = STDefaults[.autoFit]
+
         daySlider.selectedMinimum = Float(dayRange[0])
         daySlider.selectedMaximum = Float(dayRange[1])
         timeSlider.selectedMinimum = Float(timeRange[0])
-        timeSlider.selectedMaximum = Float(timeRange[1])
+        timeSlider.selectedMaximum = Float(timeRange[1] - 1)
         
         daySlider.step = 1.0
         timeSlider.step = 1.0
@@ -33,44 +40,42 @@ class STTimetableSettingViewController: UITableViewController {
         
         daySlider.minDistance = 2.0
         timeSlider.minDistance = 7.0
-        
-        setUI()
-    }
-    
-    func setUI() {
-        let sliders : [TTRangeSlider?] = [daySlider, timeSlider]
-        var textColor : UIColor! = nil
-        var tintColor : UIColor! = nil
-        var handleColor : UIColor! = nil
-        if STDefaults[.autoFit] {
-            trimmingSwitch.isOn = true
-            textColor = UIColor.gray
-            tintColor = UIColor.lightGray
-            handleColor = UIColor.lightGray
-        } else {
-            trimmingSwitch.isOn = false
-            textColor = UIColor.black
-            tintColor = UIColor.lightGray
-            handleColor = UIColor.black
-        }
-        for slider in sliders {
-            slider?.isEnabled = !STDefaults[.autoFit]
-            slider?.tintColor = tintColor
-            slider?.handleColor = handleColor
-            slider?.minLabelColour = handleColor
-            slider?.maxLabelColour = handleColor
-            slider?.tintColorBetweenHandles = handleColor
-        }
-        dayText.textColor = textColor
-        timeText.textColor = textColor
+
+        trimmingSwitch.rx.isOn
+            .subscribe(onNext: {[weak self] isOn in
+                guard let self = self else { return }
+                let sliders : [TTRangeSlider?] = [self.daySlider, self.timeSlider]
+                let textColor = isOn ? UIColor.gray : UIColor.black
+                let tintColor = UIColor.lightGray
+                let handleColor = isOn ? UIColor.lightGray : UIColor.black
+                for slider in sliders {
+                    slider?.isEnabled = !isOn
+                    slider?.tintColor = tintColor
+                    slider?.handleColor = handleColor
+                    slider?.minLabelColour = handleColor
+                    slider?.maxLabelColour = handleColor
+                    slider?.tintColorBetweenHandles = handleColor
+                }
+                self.dayText.textColor = textColor
+                self.timeText.textColor = textColor
+                self.saveSetting()
+            }).disposed(by: disposeBag)
     }
     
     func saveSetting() {
-        STDefaults[.autoFit] = trimmingSwitch.isOn
-        STDefaults[.timeRange] = [Double(timeSlider.selectedMinimum),
-                                  Double(timeSlider.selectedMaximum)]
-        STDefaults[.dayRange] = [Int(daySlider.selectedMinimum),
-                                 Int(daySlider.selectedMaximum)]
+        let fitMode : STTimetableView.FitMode
+        if trimmingSwitch.isOn {
+            fitMode = .auto
+        } else {
+            let spec = STTimetableView.FitSpec(
+                startPeriod: Int(timeSlider.selectedMinimum),
+                endPeriod: Int(timeSlider.selectedMaximum + 1),
+                startDay: Int(daySlider.selectedMinimum),
+                endDay: Int(daySlider.selectedMaximum)
+            )
+            fitMode = .manual(spec: spec)
+        }
+        settingManager.fitMode = fitMode
     }
     
     override func viewDidLoad() {
@@ -93,15 +98,13 @@ class STTimetableSettingViewController: UITableViewController {
     }
     */
     
-    override func willMove(toParentViewController parent: UIViewController?) {
+    override func willMove(toParent parent: UIViewController?) {
         if parent == nil { // check if it is popping from the navigation stack
             saveSetting()
-            STEventCenter.sharedInstance.postNotification(event: .SettingChanged, object: self)
         }
     }
     
     @IBAction func autoFitValueChanged(_ sender: AnyObject) {
         saveSetting()
-        setUI()
     }
 }

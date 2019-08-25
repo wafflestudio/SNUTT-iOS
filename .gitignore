@@ -18,6 +18,12 @@ DerivedData
 *.xcuserstate
 *.DS_Store
 
+## Obj-C/Swift specific
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
 # CocoaPods
 #
 # We recommend against adding the Pods directory to your .gitignore. However
@@ -25,6 +31,13 @@ DerivedData
 # http://guides.cocoapods.org/using/using-cocoapods.html#should-i-ignore-the-pods-directory-in-source-control
 #
 Pods/
+
+# fastlane
+
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
 
 # SNUTT-iOS
 

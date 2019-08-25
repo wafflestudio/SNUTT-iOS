@@ -7,37 +7,63 @@
 //
 
 import Foundation
-import SwiftyJSON
 
-protocol STNotification {
-    var message: String { get }
-    var createdTime: Date? { get }
-    var createdFrom: String { get }
-    var type: STNotificationType { get }
-    var image: UIImage { get }
+struct STNotification {
+    var type: STNotificationType
+    var message: String
+    var createdTime: Date?
+    var url: String?
 }
 
-enum STNotificationType : Int {
+enum STNotificationType : Int, Codable {
     case Normal = 0, CourseBook, LectureUpdate, LectureRemove, Link
 }
 
-class STNotiUtil {
-    static func parse(_ json: JSON) -> STNotification {
-        let type = STNotificationType.init(rawValue: json["type"].intValue) ?? STNotificationType.Normal
+extension STNotification {
+    var image: UIImage {
         switch type {
         case .Normal:
-            return STNormalNotification(json: json)
+            return UIImage(named: "noticeWarning")!
         case .CourseBook:
-            return STCourseBookNotification(json: json)
+            return UIImage(named: "noticeTimetable")!
         case .LectureUpdate:
-            return STLectureUpdateNotification(json: json)
+            return UIImage(named: "noticeUpdate")!
         case .LectureRemove:
-            return STLectureRemoveNotification(json: json)
+            return UIImage(named: "noticeTrash")!
         case .Link:
-            return STLinkNotification(json: json)
+            return UIImage(named: "noticeInfo")!
         }
     }
-    
+
+    var createdFrom: String {
+        if let createdTime = createdTime {
+            return Date().offsetFrom(createdTime)
+        } else {
+            return ""
+        }
+    }
+}
+
+extension STNotification : Decodable {
+    private enum CodingKeys: String, CodingKey {
+        case message
+        case type
+        case created_at
+        case createdFrom
+        case detail
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        type = (try? container.decode(STNotificationType.self, forKey: .type)) ?? .Normal
+        message = (try container.decodeIfPresent(String.self, forKey: .message)) ?? ""
+        let createdAtStr = (try container.decodeIfPresent(String.self, forKey: .created_at)) ?? ""
+        createdTime = STNotiUtil.parseDate(createdAtStr)
+        url = (try? container.decode(String.self, forKey: .detail)) ?? nil
+    }
+}
+
+class STNotiUtil {
     static fileprivate func getDateFormatter() -> DateFormatter {
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd'T'HH:mm:ss.SSSXXXXX"
@@ -48,118 +74,5 @@ class STNotiUtil {
     
     static open func parseDate(_ str: String) -> Date? {
         return STNotiUtil.dateFormatter.date(from: str)
-    }
-}
-
-struct STNormalNotification : STNotification {
-    let message: String
-    let createdTime: Date?
-    let createdFrom: String
-    let type = STNotificationType.Normal
-    static let _image: UIImage = #imageLiteral(resourceName: "noticeWarning")
-    var image: UIImage {
-        get {
-            return STNormalNotification._image
-        }
-    }
-    init(json : JSON) {
-        message = json["message"].stringValue
-        createdTime = STNotiUtil.parseDate(json["created_at"].stringValue)
-        if (createdTime != nil) {
-            createdFrom = Date().offsetFrom(createdTime!)
-        } else {
-            createdFrom = ""
-        }
-    }
-}
-
-struct STCourseBookNotification : STNotification {
-    let message: String
-    let createdTime: Date?
-    let createdFrom: String
-    let type = STNotificationType.CourseBook
-    static let _image: UIImage = #imageLiteral(resourceName: "noticeTimetable")
-    var image: UIImage {
-        get {
-            return STCourseBookNotification._image
-        }
-    }
-    init(json : JSON) {
-        message = json["message"].stringValue
-        createdTime = STNotiUtil.parseDate(json["created_at"].stringValue)
-        if (createdTime != nil) {
-            createdFrom = Date().offsetFrom(createdTime!)
-        } else {
-            createdFrom = ""
-        }
-    }
-}
-
-struct STLectureUpdateNotification : STNotification {
-    let message: String
-    let createdTime: Date?
-    let createdFrom: String
-    let type = STNotificationType.LectureUpdate
-    static let _image: UIImage = #imageLiteral(resourceName: "noticeUpdate")
-    var image: UIImage {
-        get {
-            return STLectureUpdateNotification._image
-        }
-    }
-    init(json : JSON) {
-        message = json["message"].stringValue
-        createdTime = STNotiUtil.parseDate(json["created_at"].stringValue)
-        if (createdTime != nil) {
-            createdFrom = Date().offsetFrom(createdTime!)
-        } else {
-            createdFrom = ""
-        }
-    }
-}
-
-struct STLectureRemoveNotification : STNotification {
-    let message: String
-    let createdTime: Date?
-    let createdFrom: String
-    let type = STNotificationType.LectureRemove
-    static let _image: UIImage = #imageLiteral(resourceName: "noticeTrash")
-    var image: UIImage {
-        get {
-            return STLectureRemoveNotification._image
-        }
-    }
-    init(json : JSON) {
-        message = json["message"].stringValue
-        createdTime = STNotiUtil.parseDate(json["created_at"].stringValue)
-        if (createdTime != nil) {
-            createdFrom = Date().offsetFrom(createdTime!)
-        } else {
-            createdFrom = ""
-        }
-    }
-}
-
-struct STLinkNotification : STNotification {
-    let message: String
-    let createdTime: Date?
-    let createdFrom: String
-    let type = STNotificationType.Link
-    let url: String?
-
-    static let _image: UIImage = #imageLiteral(resourceName: "noticeInfo")
-    var image: UIImage {
-        get {
-            return STLinkNotification._image
-        }
-    }
-    init(json : JSON) {
-        message = json["message"].stringValue
-        createdTime = STNotiUtil.parseDate(json["created_at"].stringValue)
-        if (createdTime != nil) {
-            createdFrom = Date().offsetFrom(createdTime!)
-        } else {
-            createdFrom = ""
-        }
-        url = json["detail"].string
     }
 }

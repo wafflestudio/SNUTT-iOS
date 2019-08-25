@@ -12,6 +12,8 @@ class STTimetableAddController: UIViewController, UIPickerViewDataSource, UIPick
 
     @IBOutlet weak var titleTextField: UITextField!
     @IBOutlet weak var semesterPicker: UIPickerView!
+
+    let courseBookListManager = AppContainer.resolver.resolve(STCourseBookListManager.self)!
     
     weak var timetableListController : STTimetableListController!
     
@@ -23,7 +25,7 @@ class STTimetableAddController: UIViewController, UIPickerViewDataSource, UIPick
         semesterPicker.dataSource = self
     }
     
-    func reloadCourseBook() {
+    @objc func reloadCourseBook() {
         semesterPicker.reloadAllComponents()
     }
 
@@ -39,7 +41,7 @@ class STTimetableAddController: UIViewController, UIPickerViewDataSource, UIPick
 
     @IBAction func saveButtonClicked(_ sender: UIBarButtonItem) {
         let index = semesterPicker.selectedRow(inComponent: 0)
-        let selectedCourseBook = STCourseBookList.sharedInstance.courseBookList[index]
+        let selectedCourseBook = courseBookListManager.courseBookList[index]
         let title = titleTextField.text
         if (title == nil || title == "") {
             STAlertView.showAlert(title: "시간표 추가 실패", message: "시간표 이름을 적어주세요.")
@@ -57,11 +59,11 @@ class STTimetableAddController: UIViewController, UIPickerViewDataSource, UIPick
     }
     
     func pickerView(_ pickerView: UIPickerView, numberOfRowsInComponent component: Int) -> Int {
-        return STCourseBookList.sharedInstance.courseBookList.count
+        return courseBookListManager.courseBookList.count
     }
     
     func pickerView(_ pickerView: UIPickerView, titleForRow row: Int, forComponent component: Int) -> String? {
-        return STCourseBookList.sharedInstance.courseBookList[row].quarter.longString()
+        return courseBookListManager.courseBookList[row].quarter.longString()
     }
     
     /*

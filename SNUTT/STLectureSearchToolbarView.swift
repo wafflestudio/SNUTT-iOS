@@ -34,10 +34,10 @@ class STLectureSearchToolbarView: UIView, UICollectionViewDelegate, UICollection
         tagFilterCollectionView.register(nib, forCellWithReuseIdentifier: "STTagFilterCollectionViewCell")
         sizingCell = nib.instantiate(withOwner: self, options: nil)[0] as! STTagFilterCollectionViewCell
         tagTypeList = [.AcademicYear, .Classification, .Credit, .Department, .Instructor, .Category]
-        sharpButton.buttonPressAction = { _ in
+        sharpButton.buttonPressAction = {
             self.sharpButtonClicked()
         }
-        emptyTimeButton.buttonPressAction = { _ in
+        emptyTimeButton.buttonPressAction = {
             self.emptyTimeButtonClicked()
         }
         
@@ -86,7 +86,7 @@ class STLectureSearchToolbarView: UIView, UICollectionViewDelegate, UICollection
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         sizingCell.tagType = tagTypeList[indexPath.row]
-        return sizingCell.contentView.systemLayoutSizeFitting(UILayoutFittingCompressedSize, withHorizontalFittingPriority: Float(self.frame.width), verticalFittingPriority: 42)
+        return sizingCell.contentView.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize, withHorizontalFittingPriority: UILayoutPriority(rawValue: Float(self.frame.width)), verticalFittingPriority: UILayoutPriority(rawValue: 42))
     }
     
     func numberOfSections() -> Int {

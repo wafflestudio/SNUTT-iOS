@@ -16,7 +16,7 @@ class STNotificationTableViewCell: UITableViewCell {
     var notification : STNotification! {
         didSet {
             
-            let grayAttribute = [NSForegroundColorAttributeName: UIColor.gray]
+            let grayAttribute = [NSAttributedString.Key.foregroundColor: UIColor.gray]
             let timeText = NSAttributedString(string: notification.createdFrom, attributes: grayAttribute)
             var message = NSMutableAttributedString(string: notification.message+" ")
             message.append(timeText)

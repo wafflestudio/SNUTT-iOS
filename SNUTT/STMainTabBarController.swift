@@ -7,12 +7,15 @@
 //
 
 import UIKit
+import RxSwift
 
 class STMainTabBarController: UITabBarController {
 
     static weak var controller : STMainTabBarController? = nil
 
     weak var notificationController : STNotificationTableViewController? = nil
+    let timetableManager = AppContainer.resolver.resolve(STTimetableManager.self)!
+    private let disposeBag = DisposeBag()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -21,6 +24,11 @@ class STMainTabBarController: UITabBarController {
             item.image = item.image!.withRenderingMode(.alwaysOriginal)
         }
         setNotiBadge(STDefaults[.shouldShowBadge])
+        if timetableManager.currentTimetable == nil {
+            timetableManager.getRecentTimetable()
+                .subscribe(onError: { _ in })
+                .disposed(by: disposeBag)
+        }
         // Do any additional setup after loading the view.
     }
     

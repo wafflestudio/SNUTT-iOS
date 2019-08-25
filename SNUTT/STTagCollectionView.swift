@@ -25,11 +25,11 @@ class STTagCollectionView: UICollectionView, UICollectionViewDataSource, UIColle
     
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         sizingCell.searchTag = tagList[indexPath.row]
-        return sizingCell.systemLayoutSizeFitting(UILayoutFittingCompressedSize, withHorizontalFittingPriority: Float(self.frame.width), verticalFittingPriority: 27)
+        return sizingCell.systemLayoutSizeFitting(UIView.layoutFittingCompressedSize, withHorizontalFittingPriority: UILayoutPriority(rawValue: Float(self.frame.width)), verticalFittingPriority: UILayoutPriority(rawValue: 27))
     }
     
     func hide() {
-        searchController.tagCollectionViewConstraint.priority = 700
+        searchController.tagCollectionViewConstraint.priority = UILayoutPriority(rawValue: 700)
         UIView.animate(withDuration: 0.2, animations:{
             self.layoutIfNeeded()
             self.searchController.tagTableView.contentInset.top = 5
@@ -38,7 +38,7 @@ class STTagCollectionView: UICollectionView, UICollectionViewDataSource, UIColle
     }
     
     func show() {
-        searchController.tagCollectionViewConstraint.priority = 800
+        searchController.tagCollectionViewConstraint.priority = UILayoutPriority(rawValue: 800)
         UIView.animate(withDuration: 0.2, animations: {
             self.layoutIfNeeded()
             self.searchController.tagTableView.contentInset.top = -2

@@ -112,13 +112,6 @@ extension UIView {
     }
 }
 
-// Protocol for nscoding with struct in swift, source : http://redqueencoder.com/property-lists-and-user-defaults-in-swift/
-
-protocol DictionaryRepresentable {
-    func dictionaryValue() -> NSDictionary
-    init?(dictionary:NSDictionary?)
-}
-
 extension RawRepresentable {
     init?(raw: Self.RawValue?) {
         if let rawValue = raw {
@@ -129,26 +122,9 @@ extension RawRepresentable {
     }
 }
 
-extension Array where Element : DictionaryRepresentable{
-    func dictionaryValue() -> [NSDictionary] {
-        let representation : [NSDictionary] = self.map{return $0.dictionaryValue()}
-        return representation
-    }
-    init?(dictionary:[NSDictionary]?) {
-        guard let values = dictionary else {return nil}
-        var testArray : [Element?] = values.map({return Element(dictionary: $0)})
-        let rawArray = testArray.flatMap({ $0 })
-        if testArray.count != rawArray.count {
-            return nil
-        }
-        self = rawArray
-    }
-}
-
-func getDocumentsDirectory() -> NSString {
-    let paths = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)
-    let documentsDirectory = paths[0]
-    return documentsDirectory as NSString
+func getDocumentsDirectory() -> URL {
+    let paths = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)
+    return paths[0]
 }
 
 func isLargerThanSE() -> Bool {
@@ -208,12 +184,12 @@ extension UITextField {
 
     @IBInspectable var hideBorder: Bool {
         get {
-            return borderStyle == UITextBorderStyle.none
+            return borderStyle == UITextField.BorderStyle.none
         }
         set {
             if newValue {
-                borderStyle = UITextBorderStyle.line
-                borderStyle = UITextBorderStyle.none
+                borderStyle = UITextField.BorderStyle.line
+                borderStyle = UITextField.BorderStyle.none
             }
         }
     }

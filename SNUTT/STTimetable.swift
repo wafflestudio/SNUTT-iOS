@@ -7,20 +7,18 @@
 //
 
 import Foundation
-import SwiftyJSON
 
 enum STAddLectureState {
     case success, errorTime, errorSameLecture
 }
 
-class STTimetable {
-    
+struct STTimetable: Codable {
     var lectureList : [STLecture] = []
     var quarter : STQuarter
     var title : String
+    // TODO: id is not nullable
     var id : String? = ""
-    var temporaryLecture : STLecture? = nil
-    
+
     var isLoaded : Bool {
         get {
             return !(id==nil)
@@ -46,32 +44,24 @@ class STTimetable {
         self.quarter = courseBook.quarter
         self.title = title
     }
-    
-    init(json : JSON) {
-        let year = json["year"].intValue
-        let semester = STSemester(rawValue: json["semester"].intValue)!
-        self.quarter = STQuarter(year: year, semester: semester)
-        self.title = json["title"].stringValue
-        self.id = json["_id"].string
-        let lectures = json["lecture_list"].arrayValue
-        lectures.forEach {data in
-            self.addLecture(STLecture(json: data))
+
+    private func canAddLecture(lectureList: [STLecture], lecture: STLecture) -> Bool {
+        for it in lectureList {
+            if it.isSameLecture(lecture) {
+                return false
+            }
+            for class1 in it.classList {
+                for class2 in lecture.classList {
+                    if class1.time.isOverlappingWith(class2.time) {
+                        return false
+                    }
+                }
+            }
         }
+        return true
     }
     
-    func toDictionary() -> [String: Any] {
-        return [
-            "year" : quarter.year,
-            "semester" : quarter.semester.rawValue,
-            "title" : title,
-            "_id" : id!,
-            "lecture_list" : lectureList.map({ lecture in
-                return lecture.toDictionary()
-            })
-        ]
-    }
-    
-    func addLecture(_ lecture : STLecture) -> STAddLectureState {
+    mutating func addLecture(_ lecture : STLecture) -> STAddLectureState {
         for it in lectureList {
             if it.isSameLecture(lecture){
                 return STAddLectureState.errorSameLecture
@@ -97,15 +87,15 @@ class STTimetable {
         return -1;
     }
     
-    func deleteLectureAtIndex(_ index: Int) {
+    mutating func deleteLectureAtIndex(_ index: Int) {
         lectureList.remove(at: index)
     }
-    func deleteLecture(_ lecture: STLecture) {
+    mutating func deleteLecture(_ lecture: STLecture) {
         if let index = lectureList.index(of: lecture) {
             lectureList.remove(at: index)
         }
     }
-    func updateLectureAtIndex(_ index: Int, lecture :STLecture) {
+    mutating func updateLectureAtIndex(_ index: Int, lecture :STLecture) {
         lectureList[index] = lecture
     }
     
@@ -117,6 +107,36 @@ class STTimetable {
     
     func timetableReverseTimeMask() -> [Int] {
         return timetableTimeMask().map {t1 in 0x3FFFFFFF ^ t1 }
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case year
+        case semester
+        case title
+        case _id
+        case lecture_list
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(quarter.year, forKey: .year)
+        try container.encode(quarter.semester, forKey: .semester)
+        try container.encode(title, forKey: .title)
+        try container.encode(id, forKey: ._id)
+        try container.encode(lectureList, forKey: .lecture_list)
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let year = try container.decode(Int.self, forKey: .year)
+        let semester = try container.decode(STSemester.self, forKey: .semester)
+        quarter = STQuarter(year: year, semester: semester)
+        title = (try? container.decode(String.self, forKey: .title)) ?? ""
+        id = try container.decodeIfPresent(String.self, forKey: ._id)
+        let lectures = (try container.decodeIfPresent([STLecture].self, forKey: .lecture_list)) ?? []
+        lectures.forEach {
+            self.addLecture($0)
+        }
     }
 }
 

@@ -26,11 +26,13 @@ class STLectureSearchTableViewCell: UITableViewCell, UIAlertViewDelegate {
     @IBOutlet weak var constraintForHidden: NSLayoutConstraint!
     @IBOutlet weak var constraintForShown: NSLayoutConstraint!
 
+    let timetableManager = AppContainer.resolver.resolve(STTimetableManager.self)!
+
     func indexInTimetable() -> Int {
         guard let lecture = lecture else {
             return -1
         }
-        let index = STTimetableManager.sharedInstance.currentTimetable?.indexOf(lecture: lecture) ?? -1
+        let index = timetableManager.currentTimetable?.indexOf(lecture: lecture) ?? -1
         return index
     }
 
@@ -54,26 +56,6 @@ class STLectureSearchTableViewCell: UITableViewCell, UIAlertViewDelegate {
         guard let lecture = lecture else {
             return
         }
-        // TODO : Erase this code
-        // Left this code if there is specific length for titleLabel's min width
-        /*
-        let isSE = !isLargerThanSE()
-        let instructorText = lecture.instructor
-        var length = 0
-        if self.isSelected {
-            if instructorText.isEnglish() {
-                length = isSE ? 6 : 8
-            } else {
-                length = isSE ? 3 : 4
-            }
-        } else {
-            if instructorText.isEnglish() {
-                length = isSE ? 13 : 15
-            } else {
-                length = isSE ? 7 : 9
-            }
-        }
-        */
         profLabel.text = lecture.instructor
         descriptionLabel.text = (lecture.instructor == "" ? "" : "/") + "\(lecture.credit)학점"
     }
@@ -85,14 +67,17 @@ class STLectureSearchTableViewCell: UITableViewCell, UIAlertViewDelegate {
         tagLabel.trailingBuffer = 10.0
         titleLabel.animationDelay = 0.3
         tagLabel.animationDelay = 0.3
-        addButton.buttonPressAction = { _ in
-            STTimetableManager.sharedInstance.setTemporaryLecture(nil, object: self)
+        addButton.buttonPressAction = { [ weak self] in
+            guard let self = self else { return }
+            self.timetableManager.setTemporaryLecture(nil)
             self.tableView.deselectRow(at: self.tableView.indexPath(for: self)!, animated: true)
             let index = self.indexInTimetable()
             if index >= 0{
-                STTimetableManager.sharedInstance.deleteLectureAtIndex(index, object: self)
+                // TODO: move this buttonPressAction to controller
+                let _ = self.timetableManager.deleteLectureAtIndex(index).subscribe()
             } else {
-                STTimetableManager.sharedInstance.addLecture(self.lecture!, object: self)
+                // TODO: move this buttonPressAction to controller
+                let _ = self.timetableManager.addLecture(self.lecture!.id!).subscribe()
             }
             self.setAddButton()
         }

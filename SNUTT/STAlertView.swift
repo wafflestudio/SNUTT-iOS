@@ -17,7 +17,7 @@ class STAlertView {
     // or there can be other solutions.
     
     static fileprivate func createAlert(title: String, message: String) -> UIAlertController {
-        return UIAlertController(title: title, message: message, preferredStyle: UIAlertControllerStyle.alert)
+        return UIAlertController(title: title, message: message, preferredStyle: UIAlertController.Style.alert)
     }
     
     static fileprivate func showAlert(_ alert: UIAlertController) {
@@ -29,7 +29,7 @@ class STAlertView {
                 if topController is UIAlertController {
                     let topAlertController = topController as! UIAlertController
                     if topAlertController.actions.count == 0 {
-                        topController.dismiss(animated: false, completion: { _ in
+                        topController.dismiss(animated: false, completion: {
                             showAlert(alert)
                         })
                         return
@@ -43,7 +43,7 @@ class STAlertView {
     
     static func showAlert(title: String, message: String) {
         let alert = STAlertView.createAlert(title: title, message: message)
-        alert.addAction(UIAlertAction(title: "확인", style: UIAlertActionStyle.default, handler: nil))
+        alert.addAction(UIAlertAction(title: "확인", style: UIAlertAction.Style.default, handler: nil))
         STAlertView.showAlert(alert)
     }
     
@@ -70,8 +70,8 @@ class STAlertView {
 
         let views = ["pending" : pending.view, "indicator" : indicator]
 
-        var constraints = NSLayoutConstraint.constraints(withVisualFormat: "V:[indicator]-(-50)-|", options: NSLayoutFormatOptions.alignAllCenterY, metrics: nil, views: views)
-        constraints += NSLayoutConstraint.constraints(withVisualFormat: "H:|[indicator]|", options: NSLayoutFormatOptions.alignAllCenterX, metrics: nil, views: views)
+        var constraints = NSLayoutConstraint.constraints(withVisualFormat: "V:[indicator]-(-50)-|", options: NSLayoutConstraint.FormatOptions.alignAllCenterY, metrics: nil, views: views)
+        constraints += NSLayoutConstraint.constraints(withVisualFormat: "H:|[indicator]|", options: NSLayoutConstraint.FormatOptions.alignAllCenterX, metrics: nil, views: views)
         pending.view.addConstraints(constraints)
 
         indicator.isUserInteractionEnabled = false

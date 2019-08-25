@@ -8,9 +8,14 @@
 
 import UIKit
 import FBSDKLoginKit
+import RxSwift
 
 class STAccountSettingViewController: UITableViewController {
-    
+    let userManager = AppContainer.resolver.resolve(STUserManager.self)!
+    let networkProvider = AppContainer.resolver.resolve(STNetworkProvider.self)!
+    let errorHandler = AppContainer.resolver.resolve(STErrorHandler.self)!
+    let disposeBag = DisposeBag()
+
     var isNetworking = true;
     
     enum CellType {
@@ -29,23 +34,23 @@ class STAccountSettingViewController: UITableViewController {
         case showEmail
         case changeEmail
         case unregister
-        
-        var cellType : CellType {
+
+        func getCellType(currentUser: STUser?) -> CellType {
             switch (self) {
             case .showId:
-                return CellType.rightDetail(title: "아이디", detail: STUser.currentUser?.localId ?? "(없음)")
+                return CellType.rightDetail(title: "아이디", detail: currentUser?.localId ?? "(없음)")
             case .changePassword:
                 return CellType.button(title: "비밀번호 변경")
             case .attachLocalId:
                 return .button(title: "아이디 비번 추가")
             case .showFBId:
-                return .rightDetail(title: "페이스북 이름", detail: STUser.currentUser?.fbName ?? "(없음)")
+                return .rightDetail(title: "페이스북 이름", detail: currentUser?.fbName ?? "(없음)")
             case .detachFB:
                 return .button(title: "페이스북 연동 취소")
             case .attachFB:
                 return .button(title: "페이스북 연동")
             case .showEmail:
-                return .rightDetail(title: "이메일", detail: STUser.currentUser?.email ?? "(없음)")
+                return .rightDetail(title: "이메일", detail: currentUser?.email ?? "(없음)")
             case .changeEmail:
                 return .button(title: "이메일 변경")
             case .unregister:
@@ -71,7 +76,7 @@ class STAccountSettingViewController: UITableViewController {
         // self.navigationItem.rightBarButtonItem = self.editButtonItem()
     }
     
-    func userUpdated() {
+    @objc func userUpdated() {
         isNetworking = false
         refreshCellList()
         self.tableView.reloadData()
@@ -79,20 +84,20 @@ class STAccountSettingViewController: UITableViewController {
     
     func getUser() {
         isNetworking = true;
-        STUser.getUser()
+        userManager.getUser()
     }
     
     func refreshCellList() {
         cellList = []
         
-        if (STUser.currentUser?.localId == nil) {
+        if (userManager.currentUser?.localId == nil) {
             cellList.append([Cell.attachLocalId])
         } else {
             cellList.append([Cell.showId, Cell.changePassword])
         }
         
         fbSection = cellList.count
-        if (STUser.currentUser?.fbName == nil) {
+        if (userManager.currentUser?.fbName == nil) {
             cellList.append([Cell.attachFB])
         } else {
             cellList.append([Cell.showFBId, Cell.detachFB])
@@ -122,7 +127,7 @@ class STAccountSettingViewController: UITableViewController {
     
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cellType = cellList[indexPath.section][indexPath.row].cellType
+        let cellType = cellList[indexPath.section][indexPath.row].getCellType(currentUser: userManager.currentUser)
         switch cellType {
         case .rightDetail(let title, let detail):
             let cell = tableView.dequeueReusableCell(withIdentifier: "RightDetailCell", for: indexPath)
@@ -147,16 +152,20 @@ class STAccountSettingViewController: UITableViewController {
             return
         }
         let cell = cellList[indexPath.section][indexPath.row]
+        let networkProvider = self.networkProvider
+        let disposeBag = self.disposeBag
         switch (cell) {
         case .attachFB:
-            let registerFB : (String, String) -> () = { id, token in
-                STNetworking.attachFB(fb_id: id, fb_token: token, done: {
-                    STUser.getUser()
-                    self.refreshCellList()
-                    self.tableView.reloadSections(IndexSet(integer: self.fbSection), with: .automatic)
-                    }, failure: { _ in
-                        return
-                })
+            let registerFB : (String, String) -> () = { [weak self] id, token in
+                guard let self = self else { return }
+                self.networkProvider.rx.request(STTarget.AddFacebook(params: .init(fb_id: id, fb_token: token)))
+                    .subscribe(onSuccess: { [weak self] _ in
+                        guard let self = self else { return }
+                        self.userManager.getUser()
+                        self.refreshCellList()
+                        self.tableView.reloadSections(IndexSet(integer: self.fbSection), with: .automatic)
+                        }, onError: self.errorHandler.apiOnError
+                    ).disposed(by: self.disposeBag)
             }
             
             if let accessToken = FBSDKAccessToken.current(),
@@ -198,13 +207,16 @@ class STAccountSettingViewController: UITableViewController {
                 alert.addAction(UIAlertAction(title: "이메일 변경", style: .default, handler: { _ in
                     if let email = alert.textFields?.first?.text {
                         if (STUtil.validateEmail(email)) {
-                            STNetworking.editUser(email, done: {
-                                STUser.currentUser?.email = email
-                                self.tableView.reloadSections(IndexSet(integer: self.emailSection), with: .automatic)
-                                }
-                                , failure: {
-                                    STAlertView.showAlert(title: "이메일 변경", message: "이메일 변경에 실패했습니다.")
-                            })
+                            networkProvider.rx.request(STTarget.EditUser(params: .init(email: email)))
+                                .subscribe(onSuccess: { [weak self] _ in
+                                    guard let self = self else { return }
+                                    self.userManager.currentUser?.email = email
+                                    self.tableView.reloadSections(IndexSet(integer: self.emailSection), with: .automatic)
+                                    }, onError: { [weak self] error in
+                                        self?.errorHandler.apiOnError(error)
+                                        STAlertView.showAlert(title: "이메일 변경", message: "이메일 변경에 실패했습니다.")
+                                })
+                                .disposed(by: disposeBag)
                             return
                         }
                     }
@@ -244,39 +256,42 @@ class STAccountSettingViewController: UITableViewController {
                         STAlertView.showAlert(title: "비밀번호 변경", message: message)
                         return
                     }
-                    
-                    STNetworking.changePassword(curPass, newPassword: newPass, done: { _ in
-                        return
-                        }, failure: { errMessage in
-                            if let err = errMessage {
-                                STAlertView.showAlert(title: "비밀번호 변경", message: err)
-                            }
-                    })
+                    networkProvider.rx.request(STTarget.ChangePassword(params: .init(old_password: curPass, new_password: newPass)))
+                        .subscribe(onSuccess: { result in
+                            STDefaults[.token] = result.token
+                        }, onError: { [weak self] error in
+                            self?.errorHandler.apiOnError(error)
+                        })
                 }))
             })
             return
         case .detachFB:
-            if STUser.currentUser?.localId == nil {
+            if userManager.currentUser?.localId == nil {
                 STAlertView.showAlert(title: "페이스북 연동 끊기", message: "현재 로그인 수단이 페이스북 밖에 없기 때문에, 페이스북 연동을 끊을 수 없습니다.")
                 return
             }
-            let detachAction = UIAlertAction(title: "페이스북 연동 끊기", style: .destructive, handler: { _ in
-                STNetworking.detachFB({ _ in
-                    STUser.currentUser?.fbName = nil
-                    self.refreshCellList()
-                    self.tableView.reloadSections(IndexSet(integer: self.fbSection), with: .automatic)
-                    }, failure: { _ in
-                        return
-                })
+            let detachAction = UIAlertAction(title: "페이스북 연동 끊기", style: .destructive, handler: { [weak self] _ in
+                guard let self = self else { return }
+                self.networkProvider.rx.request(STTarget.DetachFacebook())
+                    .subscribe(onSuccess: { [weak self] _ in
+                        guard let self = self else { return }
+                        self.userManager.currentUser?.fbName = nil
+                        self.refreshCellList()
+                        self.tableView.reloadSections(IndexSet(integer: self.fbSection), with: .automatic)
+                        }, onError: self.errorHandler.apiOnError
+                    ).disposed(by: self.disposeBag)
             })
             let cancelAction = UIAlertAction(title: "취소", style: .cancel, handler: nil)
             STAlertView.showAlert(title: "페이스북 연동 끊기", message: "페이스북 연동을 끊겠습니까?", actions: [cancelAction, detachAction])
             return
         case .unregister:
-            let unregisterAction = UIAlertAction(title: "회원탈퇴", style: .destructive, handler: { _ in
-                STNetworking.unregister({ _ in
-                    return
-                })
+            let unregisterAction = UIAlertAction(title: "회원탈퇴", style: .destructive, handler: { [weak self] _ in
+                guard let self = self else { return }
+                self.networkProvider.rx.request(STTarget.DeleteUser())
+                    .subscribe(onSuccess: { [weak self] _ in
+                        self?.userManager.loadLoginPage()
+                        }, onError: self.errorHandler.apiOnError
+                    ).disposed(by: self.disposeBag)
             })
             let cancelAction = UIAlertAction(title: "취소", style: .cancel, handler: nil)
             STAlertView.showAlert(title: "회원탈퇴", message: "SNUTT 회원 탈퇴를 하겠습니까?", actions: [cancelAction, unregisterAction])

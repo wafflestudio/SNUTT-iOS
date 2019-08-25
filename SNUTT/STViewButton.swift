@@ -43,7 +43,7 @@ class STViewButton: UIView {
         origBgColor = self.backgroundColor
     }
 
-    func buttonPressed(gesture: UITapGestureRecognizer) {
+    @objc func buttonPressed(gesture: UITapGestureRecognizer) {
 
         buttonPressAction?()
         self.backgroundColor = origBgColor

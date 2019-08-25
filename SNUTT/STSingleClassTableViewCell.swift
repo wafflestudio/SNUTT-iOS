@@ -7,7 +7,6 @@
 //
 
 import UIKit
-import B68UIFloatLabelTextField
 
 class STSingleClassTableViewCell: STLectureDetailTableViewCell, UITextFieldDelegate {
 

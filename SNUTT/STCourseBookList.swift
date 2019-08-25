@@ -7,20 +7,17 @@
 //
 
 import Foundation
+import Swinject
+import RxSwift
 
-class STCourseBookList {
-    // MARK: Singleton
-    
-    fileprivate static var sharedManager : STCourseBookList? = nil
-    static var sharedInstance : STCourseBookList {
-        get {
-            if sharedManager == nil {
-                sharedManager = STCourseBookList()
-            }
-            return sharedManager!
-        }
-    }
-    fileprivate init() {
+class STCourseBookListManager {
+    let networkProvider: STNetworkProvider
+    let errorHandler : STErrorHandler
+    let disposeBag = DisposeBag()
+
+    init(resolver r: Resolver) {
+        networkProvider = r.resolve(STNetworkProvider.self)!
+        errorHandler = r.resolve(STErrorHandler.self)!
         self.loadCourseBooks()
         self.getCourseBooks()
     }
@@ -28,30 +25,22 @@ class STCourseBookList {
     var courseBookList : [STCourseBook] = []
     
     func loadCourseBooks () {
-        
-        guard let courseBookList = NSKeyedUnarchiver.unarchiveObject(withFile: getDocumentsDirectory().appendingPathComponent("courseBookList.archive")) as? [NSDictionary] else {
-            self.courseBookList = []
-            return
-        }
-        self.courseBookList = courseBookList.map({ dict in
-            return STCourseBook(dictionary: dict)!
-        })
+        self.courseBookList = STDefaults[.courseBookList]
     }
     
     func saveCourseBooks () {
-        NSKeyedArchiver.archiveRootObject(courseBookList.map({ book in
-            return book.dictionaryValue()
-        }), toFile: getDocumentsDirectory().appendingPathComponent("courseBookList.archive"))
+        STDefaults[.courseBookList] = courseBookList
+        STDefaults.synchronize()
     }
     
     func getCourseBooks () {
-        STNetworking.getCourseBookList({ list in
-            self.courseBookList = list
-            STEventCenter.sharedInstance.postNotification(event: .CourseBookUpdated, object: nil)
-            self.saveCourseBooks()
-            }, failure: { _ in
-                return
-        })
+        networkProvider.rx.request(STTarget.GetCourseBookList())
+            .subscribe(onSuccess: { [weak self] list in
+                guard let self = self else { return }
+                self.courseBookList = list
+                STEventCenter.sharedInstance.postNotification(event: .CourseBookUpdated, object: nil)
+                self.saveCourseBooks()
+            }, onError: errorHandler.apiOnError)
     }
     
 }

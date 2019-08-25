@@ -6,8 +6,6 @@ target 'SNUTT' do
   pod 'Alamofire'
   pod 'Fabric'
   pod 'Crashlytics'
-  pod 'SwiftyJSON'
-  pod 'B68UIFloatLabelTextField', :git => 'https://github.com/Rajin9601/B68FloatingLabelTextField.git', :branch => 'Swift_3.0'
   pod 'ChameleonFramework/Swift', :git => 'https://github.com/ViccAlexander/Chameleon.git'
   pod 'ActionSheetPicker-3.0'
   pod 'Color-Picker-for-iOS', '~> 2.0'
@@ -23,17 +21,26 @@ target 'SNUTT' do
   pod 'TPKeyboardAvoiding'
   pod 'MarqueeLabel/Swift'
   pod 'UITextView+Placeholder', '~> 1.2'
+  pod 'Swinject'
+  pod 'RxSwift'
+  pod 'RxSwiftExt'
+  pod 'RxCocoa'
+  pod 'RxGesture', '~> 2.1.0'
+  pod 'RxDataSources'
+  pod 'SnapKit', '~> 4.0.0'
+  pod 'Moya/RxSwift'
 end
 
 target 'SNUTT Today' do
-  pod 'SwiftyJSON'
   pod 'SwiftyUserDefaults', :git => 'https://github.com/Rajin9601/SwiftyUserDefaults.git'
+  pod 'RxSwift'
+  pod 'RxSwiftExt'
+  pod 'RxCocoa'
+  pod 'RxGesture', '~> 2.1.0'
+  pod 'SnapKit', '~> 4.0.0'
 end
 
 post_install do |installer|
-  installer.pods_project.targets.each do |target|
-    target.build_configurations.each do |config|
-      config.build_settings['SWIFT_VERSION'] = '3.0'
-    end
-  end
+  pods_dir = File.dirname(installer.pods_project.path)
+  at_exit { `ruby #{pods_dir}/Carte/Sources/Carte/carte.rb configure` }
 end

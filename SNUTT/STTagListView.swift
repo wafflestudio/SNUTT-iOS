@@ -10,16 +10,10 @@ import UIKit
 
 class STTagListView: UITableView, UITableViewDelegate, UITableViewDataSource {
 
-    /*
-    // Only override drawRect: if you perform custom drawing.
-    // An empty implementation adversely affects performance during animation.
-    override func drawRect(rect: CGRect) {
-        // Drawing code
-    }
-    */
-    
     weak var searchController : STLectureSearchTableViewController!
     @IBOutlet weak var heightConstraint: NSLayoutConstraint!
+
+    var tagManager = AppContainer.resolver.resolve(STTagManager.self)!
     
     var filteredList : [STTag] = []
     
@@ -36,9 +30,9 @@ class STTagListView: UITableView, UITableViewDelegate, UITableViewDataSource {
     
     func showTagsFor(_ query : String, type: STTagType?) {
         if query == "" {
-            filteredList = STTagManager.sharedInstance.tagList.tagList
+            filteredList = tagManager.tagList.tagList
         } else {
-            filteredList = STTagManager.sharedInstance.tagList.tagList.filter{ tag in
+            filteredList = tagManager.tagList.tagList.filter{ tag in
                 return tag.text.hasPrefix(query)
             }
         }
@@ -72,8 +66,8 @@ class STTagListView: UITableView, UITableViewDelegate, UITableViewDataSource {
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "STTagTableViewCell", for: indexPath) as! STTagTableViewCell
-        let whiteAttribute = [NSForegroundColorAttributeName: UIColor.white]
-        let colorAttribute = [NSForegroundColorAttributeName: filteredList[indexPath.row].type.tagColor]
+        let whiteAttribute = [NSAttributedString.Key.foregroundColor: UIColor.white]
+        let colorAttribute = [NSAttributedString.Key.foregroundColor: filteredList[indexPath.row].type.tagColor]
         let text = NSMutableAttributedString()
         let sharpText = NSAttributedString(string: "# ", attributes: colorAttribute)
         let tagText = NSAttributedString(string: filteredList[indexPath.row].text, attributes: whiteAttribute)

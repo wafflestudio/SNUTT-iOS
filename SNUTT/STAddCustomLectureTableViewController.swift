@@ -7,16 +7,17 @@
 //
 
 import UIKit
+import RxSwift
 
 class STAddCustomLectureTableViewController: STSingleLectureTableViewController {
-
+    let colorManager = AppContainer.resolver.resolve(STColorManager.self)!
     override func viewDidLoad() {
         super.viewDidLoad()
 
         self.custom = true
         currentLecture.color = nil
-        if let timetable = STTimetableManager.sharedInstance.currentTimetable {
-            var colorList = STColorManager.sharedInstance.colorList.colorList
+        if let timetable = timetableManager.currentTimetable {
+            var colorList = colorManager.colorList.colorList
             var indexList = (0..<colorList.count).sorted()
             for lecture in timetable.lectureList {
                 indexList = indexList.filter({colorList[$0] != lecture.color})
@@ -107,13 +108,14 @@ class STAddCustomLectureTableViewController: STSingleLectureTableViewController 
     @IBAction func saveButtonClicked(_ sender: UIBarButtonItem) {
         self.view.endEditing(true)
         let loadingView = STAlertView.showLoading(title: "저장중...")
-        STTimetableManager.sharedInstance.addCustomLecture(currentLecture, object: self, done:{ _ in
-            loadingView.dismiss(animated: true, completion: { _ in
-                self.dismiss(animated: true)
-            })
-        }, failure: { _ in
-            loadingView.dismiss(animated: true)
-        })
+        timetableManager.addCustomLecture(currentLecture)
+            .subscribe(onCompleted: { [weak self] in
+                loadingView.dismiss(animated: true, completion: { [weak self] in
+                    self?.dismiss(animated: true)
+                })
+                }, onError: { err in
+                    loadingView.dismiss(animated: true)
+            }).disposed(by: disposeBag)
     }
     
     override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
@@ -125,7 +127,7 @@ class STAddCustomLectureTableViewController: STSingleLectureTableViewController 
         return false
     }
     
-    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
             currentLecture.classList.remove(at: indexPath.row)
             tableView.deleteRows(at: [indexPath], with: .automatic)

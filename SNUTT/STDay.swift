@@ -8,7 +8,7 @@
 
 import Foundation
 
-enum STDay : Int{
+enum STDay : Int, Hashable {
     case mon=0, tue, wed, thu, fri, sat, sun
     
     static let allValues = [mon, tue, wed, thu, fri, sat, sun]
