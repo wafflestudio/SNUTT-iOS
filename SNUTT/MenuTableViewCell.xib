@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="17701" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17703"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <tableViewCell contentMode="scaleToFill" selectionStyle="none" indentationWidth="10" reuseIdentifier="menuTableViewCell" id="KGk-i7-Jjw" customClass="MenuTableViewCell" customModule="SNUTT" customModuleProvider="target">
+            <rect key="frame" x="0.0" y="0.0" width="260" height="30"/>
+            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+            <tableViewCellContentView key="contentView" opaque="NO" clipsSubviews="YES" multipleTouchEnabled="YES" contentMode="center" tableViewCell="KGk-i7-Jjw" id="H2p-sc-9uM">
+                <rect key="frame" x="0.0" y="0.0" width="260" height="30"/>
+                <autoresizingMask key="autoresizingMask"/>
+                <subviews>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="나의 시간표" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="xfS-5S-K5S">
+                        <rect key="frame" x="34" y="6.5" width="65" height="17"/>
+                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                        <nil key="textColor"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="(3학점)" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="ETx-wt-a18">
+                        <rect key="frame" x="103" y="6.5" width="43.5" height="17"/>
+                        <color key="tintColor" systemColor="opaqueSeparatorColor"/>
+                        <fontDescription key="fontDescription" type="system" pointSize="14"/>
+                        <color key="textColor" systemColor="opaqueSeparatorColor"/>
+                        <nil key="highlightedColor"/>
+                    </label>
+                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Azq-zd-SU2">
+                        <rect key="frame" x="236" y="3" width="24" height="24"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="24" id="Bsw-mr-dvH"/>
+                            <constraint firstAttribute="height" constant="24" id="Rif-Da-npL"/>
+                        </constraints>
+                        <color key="tintColor" red="0.006906411082" green="0.006906411082" blue="0.006906411082" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                        <state key="normal" image="dotdotdot"/>
+                        <connections>
+                            <action selector="settingButton:" destination="KGk-i7-Jjw" eventType="touchUpInside" id="xfa-vx-K84"/>
+                        </connections>
+                    </button>
+                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="KQe-B6-dJx">
+                        <rect key="frame" x="208" y="3" width="24" height="24"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="24" id="kRl-y7-IK1"/>
+                            <constraint firstAttribute="height" constant="24" id="l99-s5-Vcq"/>
+                        </constraints>
+                        <color key="tintColor" red="0.006906411082" green="0.006906411082" blue="0.006906411082" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                        <state key="normal" image="duplicate"/>
+                        <connections>
+                            <action selector="duplicateButton:" destination="KGk-i7-Jjw" eventType="touchUpInside" id="YtN-6h-sCB"/>
+                        </connections>
+                    </button>
+                    <imageView clipsSubviews="YES" userInteractionEnabled="NO" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="checkMint1x" translatesAutoresizingMaskIntoConstraints="NO" id="jXi-j5-I6Y">
+                        <rect key="frame" x="10" y="7" width="16" height="16"/>
+                        <color key="tintColor" systemColor="systemRedColor"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="16" id="RgH-DH-MBx"/>
+                            <constraint firstAttribute="height" constant="16" id="igr-jt-J6K"/>
+                        </constraints>
+                    </imageView>
+                </subviews>
+                <constraints>
+                    <constraint firstItem="KQe-B6-dJx" firstAttribute="centerY" secondItem="H2p-sc-9uM" secondAttribute="centerY" id="47N-v7-yio"/>
+                    <constraint firstItem="Azq-zd-SU2" firstAttribute="centerY" secondItem="H2p-sc-9uM" secondAttribute="centerY" id="4vi-5n-vRH"/>
+                    <constraint firstItem="ETx-wt-a18" firstAttribute="leading" secondItem="xfS-5S-K5S" secondAttribute="trailing" constant="4" id="7PJ-Bd-cUA"/>
+                    <constraint firstAttribute="trailing" secondItem="Azq-zd-SU2" secondAttribute="trailing" id="DjF-Gy-g4U"/>
+                    <constraint firstItem="jXi-j5-I6Y" firstAttribute="centerY" secondItem="H2p-sc-9uM" secondAttribute="centerY" id="LIn-ct-ZqR"/>
+                    <constraint firstItem="jXi-j5-I6Y" firstAttribute="leading" secondItem="H2p-sc-9uM" secondAttribute="leading" constant="10" id="QCj-rS-jKl"/>
+                    <constraint firstItem="xfS-5S-K5S" firstAttribute="leading" secondItem="jXi-j5-I6Y" secondAttribute="trailing" constant="8" id="UKh-YF-9tw"/>
+                    <constraint firstItem="Azq-zd-SU2" firstAttribute="leading" secondItem="KQe-B6-dJx" secondAttribute="trailing" constant="4" id="Z9s-yW-BMA"/>
+                    <constraint firstItem="xfS-5S-K5S" firstAttribute="centerY" secondItem="H2p-sc-9uM" secondAttribute="centerY" id="jse-94-jsB"/>
+                    <constraint firstItem="ETx-wt-a18" firstAttribute="centerY" secondItem="H2p-sc-9uM" secondAttribute="centerY" id="rPs-Lp-ti1"/>
+                </constraints>
+            </tableViewCellContentView>
+            <viewLayoutGuide key="safeArea" id="njF-e1-oar"/>
+            <connections>
+                <outlet property="checkedIcon" destination="jXi-j5-I6Y" id="U7A-MN-esg"/>
+                <outlet property="credits" destination="ETx-wt-a18" id="6Ly-m8-L8q"/>
+                <outlet property="duplicateBButton" destination="KQe-B6-dJx" id="MEU-rh-H6A"/>
+                <outlet property="settingBButton" destination="Azq-zd-SU2" id="gEp-Kt-jwv"/>
+                <outlet property="timetableLabel" destination="xfS-5S-K5S" id="Fq2-xE-8T0"/>
+            </connections>
+            <point key="canvasLocation" x="137.68115942028987" y="84.375"/>
+        </tableViewCell>
+    </objects>
+    <resources>
+        <image name="checkMint1x" width="41" height="41"/>
+        <image name="dotdotdot" width="3.5" height="21.5"/>
+        <image name="duplicate" width="23" height="22"/>
+        <systemColor name="opaqueSeparatorColor">
+            <color red="0.77647058823529413" green="0.77647058823529413" blue="0.78431372549019607" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemRedColor">
+            <color red="1" green="0.23137254901960785" blue="0.18823529411764706" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+    </resources>
+</document>

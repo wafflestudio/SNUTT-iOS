@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.XIB" version="3.0" toolsVersion="17701" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES">
+    <device id="retina6_1" orientation="portrait" appearance="light"/>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="17703"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <objects>
+        <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner" customClass="TimetablePickerViewController" customModule="SNUTT" customModuleProvider="target">
+            <connections>
+                <outlet property="semesterPickerView" destination="NCz-Tw-lkZ" id="Gq6-Wr-yaC"/>
+                <outlet property="view" destination="i5M-Pr-FkT" id="sfx-zR-JGt"/>
+            </connections>
+        </placeholder>
+        <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
+        <view clearsContextBeforeDrawing="NO" contentMode="scaleToFill" id="i5M-Pr-FkT">
+            <rect key="frame" x="0.0" y="0.0" width="414" height="896"/>
+            <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+            <subviews>
+                <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="WXQ-QN-EZj">
+                    <rect key="frame" x="36" y="287" width="342" height="260"/>
+                    <subviews>
+                        <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="시간표" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="1y0-8X-dAG">
+                            <rect key="frame" x="149" y="20" width="44.5" height="20"/>
+                            <fontDescription key="fontDescription" name="AppleSDGothicNeo-SemiBold" family="Apple SD Gothic Neo" pointSize="17"/>
+                            <nil key="textColor"/>
+                            <nil key="highlightedColor"/>
+                        </label>
+                        <pickerView contentMode="scaleToFill" verticalCompressionResistancePriority="749" translatesAutoresizingMaskIntoConstraints="NO" id="NCz-Tw-lkZ">
+                            <rect key="frame" x="0.0" y="44" width="342" height="216"/>
+                        </pickerView>
+                        <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="IZG-bQ-qyj">
+                            <rect key="frame" x="288" y="14" width="30" height="32"/>
+                            <fontDescription key="fontDescription" type="system" pointSize="16"/>
+                            <state key="normal" title="완료">
+                                <color key="titleColor" red="0.006906411082" green="0.006906411082" blue="0.006906411082" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                            </state>
+                            <connections>
+                                <action selector="selectSemester:" destination="-1" eventType="touchUpInside" id="RxR-MJ-oew"/>
+                            </connections>
+                        </button>
+                        <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="b1O-C0-Y7K">
+                            <rect key="frame" x="24" y="14" width="30" height="32"/>
+                            <fontDescription key="fontDescription" type="system" pointSize="16"/>
+                            <state key="normal" title="취소">
+                                <color key="titleColor" red="0.006906411082" green="0.006906411082" blue="0.006906411082" alpha="1" colorSpace="custom" customColorSpace="displayP3"/>
+                            </state>
+                            <connections>
+                                <action selector="cancel:" destination="-1" eventType="touchUpInside" id="LUm-J0-2zQ"/>
+                            </connections>
+                        </button>
+                    </subviews>
+                    <color key="backgroundColor" systemColor="systemBackgroundColor"/>
+                    <constraints>
+                        <constraint firstItem="NCz-Tw-lkZ" firstAttribute="leading" secondItem="WXQ-QN-EZj" secondAttribute="leading" id="2c3-xp-YtG"/>
+                        <constraint firstItem="b1O-C0-Y7K" firstAttribute="leading" secondItem="WXQ-QN-EZj" secondAttribute="leading" constant="24" id="6Ee-It-QWR"/>
+                        <constraint firstItem="1y0-8X-dAG" firstAttribute="centerX" secondItem="WXQ-QN-EZj" secondAttribute="centerX" id="EZo-D0-y09"/>
+                        <constraint firstItem="1y0-8X-dAG" firstAttribute="top" secondItem="WXQ-QN-EZj" secondAttribute="top" constant="20" id="NPP-zN-OPx"/>
+                        <constraint firstAttribute="trailing" secondItem="NCz-Tw-lkZ" secondAttribute="trailing" id="NSa-AO-0RU"/>
+                        <constraint firstItem="NCz-Tw-lkZ" firstAttribute="top" secondItem="1y0-8X-dAG" secondAttribute="bottom" constant="4" id="WmG-nd-ZmB"/>
+                        <constraint firstAttribute="bottom" secondItem="NCz-Tw-lkZ" secondAttribute="bottom" id="Wzy-DG-EOO"/>
+                        <constraint firstAttribute="trailing" secondItem="IZG-bQ-qyj" secondAttribute="trailing" constant="24" id="XYx-bA-5c9"/>
+                        <constraint firstItem="IZG-bQ-qyj" firstAttribute="top" secondItem="WXQ-QN-EZj" secondAttribute="top" constant="14" id="kEO-g6-lv5"/>
+                        <constraint firstItem="b1O-C0-Y7K" firstAttribute="top" secondItem="WXQ-QN-EZj" secondAttribute="top" constant="14" id="nXq-5I-Zsa"/>
+                    </constraints>
+                </view>
+            </subviews>
+            <viewLayoutGuide key="safeArea" id="fnl-2z-Ty3"/>
+            <constraints>
+                <constraint firstItem="fnl-2z-Ty3" firstAttribute="trailing" secondItem="WXQ-QN-EZj" secondAttribute="trailing" constant="36" id="897-Ub-Il6"/>
+                <constraint firstItem="WXQ-QN-EZj" firstAttribute="leading" secondItem="fnl-2z-Ty3" secondAttribute="leading" constant="36" id="Kj9-UR-RO3"/>
+                <constraint firstItem="WXQ-QN-EZj" firstAttribute="centerY" secondItem="i5M-Pr-FkT" secondAttribute="centerY" constant="-31" id="rah-jQ-77A"/>
+            </constraints>
+            <point key="canvasLocation" x="-55.072463768115945" y="84.375"/>
+        </view>
+    </objects>
+    <resources>
+        <systemColor name="systemBackgroundColor">
+            <color white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+        </systemColor>
+    </resources>
+</document>

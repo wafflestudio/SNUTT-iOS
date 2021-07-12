@@ -27,6 +27,15 @@ class STTimetable {
         }
     }
     
+    var totalCredit : Int {
+        var credits = 0
+        for lecture in lectureList {
+            credits += lecture.credit
+        }
+        
+        return credits
+    }
+    
     init(year aYear: Int, semester aSemester: STSemester, title aTitle: String) {
         self.quarter = STQuarter(year: aYear, semester: aSemester)
         self.title = aTitle
@@ -77,7 +86,7 @@ class STTimetable {
         lectureList.append(lecture)
         return STAddLectureState.success
     }
-
+    
     func indexOf(lecture: STLecture) -> Int {
         for (index, it) in lectureList.enumerated() {
             if it.isSameLecture(lecture) {

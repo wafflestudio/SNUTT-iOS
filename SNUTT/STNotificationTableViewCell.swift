@@ -12,16 +12,30 @@ class STNotificationTableViewCell: UITableViewCell {
 
     @IBOutlet weak var iconImageView: UIImageView!
     @IBOutlet weak var descriptionLabel: UILabel!
+    @IBOutlet weak var timeLabel: UILabel!
+    @IBOutlet weak var titleLabel: UILabel!
     
     var notification : STNotification! {
         didSet {
+    
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy/MM/dd"
             
-            let grayAttribute = [convertFromNSAttributedStringKey(NSAttributedString.Key.foregroundColor): UIColor.gray]
-            let timeText = NSAttributedString(string: notification.createdFrom, attributes: convertToOptionalNSAttributedStringKeyDictionary(grayAttribute))
-            var message = NSMutableAttributedString(string: notification.message+" ")
-            message.append(timeText)
-            descriptionLabel.attributedText = message
+            var timeText = ""
+            
+            if let text = notification.createdTime {
+                timeText = dateFormatter.string(from: text)
+            }
+            
+            timeLabel.text = timeText
+            timeLabel.textColor = .gray
+            
+            titleLabel.text = notification.notificationTitle
+            
+            let message = notification.message
+            descriptionLabel.text = message
             iconImageView.image = notification.image
+            
             if case .Link = notification.type {
                 self.selectionStyle = .gray
             } else {
@@ -41,7 +55,9 @@ class STNotificationTableViewCell: UITableViewCell {
 
         // Configure the view for the selected state
     }
-
+    override func layoutSubviews() {
+        super.layoutSubviews()
+    }
 }
 
 // Helper function inserted by Swift 4.2 migrator.

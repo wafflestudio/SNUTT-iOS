@@ -163,3 +163,20 @@ struct STLinkNotification : STNotification {
         url = json["detail"].string
     }
 }
+
+extension STNotification {
+    var notificationTitle: String {
+        switch type {
+        case .CourseBook:
+            return "추가"
+        case .Normal:
+            return "업데이트"
+        case .LectureUpdate:
+            return "업데이트"
+        case .LectureRemove:
+            return "삭제"
+        case .Link:
+            return "공지"
+        }
+    }
+}

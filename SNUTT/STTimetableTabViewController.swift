@@ -12,13 +12,21 @@ class STTimetableTabViewController: UIViewController {
     
     @IBOutlet weak var timetableView: STTimetableCollectionView!
     var lectureListController : STMyLectureListController!
+    var menuController: MenuViewController!
+    let backgroundView = UIView()
     
-    enum State {
-    case timetable
-    case lectureList
+    enum ContainerViewState {
+        case timetable
+        case lectureList
     }
     
-    var state : State = .timetable
+    enum MenuControllerState {
+        case opened
+        case closed
+    }
+    
+    var containerViewState : ContainerViewState = .timetable
+    var menuControllerState : MenuControllerState = .closed
     var isInAnimation : Bool = false
     
     @IBAction func captureTimeTable(_ sender: UIBarButtonItem) {
@@ -26,6 +34,21 @@ class STTimetableTabViewController: UIViewController {
     }
     
     @IBOutlet weak var containerView: UIView!
+    
+    @IBAction func switchToTimetableListView(_ sender: UIBarButtonItem) {
+        switchView()
+    }
+    
+    @IBOutlet var rightBarButtonsForTimetable: [UIBarButtonItem]!
+    
+    @IBAction func leftBarButtonItem(_ sender: UIBarButtonItem) {
+        switch containerViewState {
+        case .timetable:
+            toggleMenuView()
+        case .lectureList:
+            switchView()
+        }
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -44,7 +67,6 @@ class STTimetableTabViewController: UIViewController {
         titleView.addGestureRecognizer(recognizer)
         
         self.navigationItem.leftBarButtonItem!.target = self
-        self.navigationItem.leftBarButtonItem!.action = #selector(self.switchView)
         
         lectureListController = UIStoryboard(name: "Main", bundle: Bundle.main).instantiateViewController(withIdentifier: "MyLectureListController") as! STMyLectureListController
         lectureListController.timetableTabViewController = self
@@ -65,6 +87,9 @@ class STTimetableTabViewController: UIViewController {
         STEventCenter.sharedInstance.addObserver(self, selector: #selector(STTimetableTabViewController.settingChanged), event: STEvent.SettingChanged, object: nil)
         
         reloadData()
+        
+        menuController = UIStoryboard(name: "Main", bundle: Bundle.main).instantiateViewController(withIdentifier: "MenuViewController") as! MenuViewController
+        addMenuView()
     }
 
     deinit {
@@ -106,14 +131,14 @@ class STTimetableTabViewController: UIViewController {
         timetableView.reloadTimetable()
     }
     
-    @objc func switchView() {
+    func switchView() {
 
         if (isInAnimation) {
             return
         }
         isInAnimation = true
         var oldView, newView : UIView!
-        switch state {
+        switch containerViewState {
         case .timetable:
             oldView = timetableView
             newView = lectureListController.view
@@ -123,20 +148,22 @@ class STTimetableTabViewController: UIViewController {
         }
 
         UIView.animate(withDuration: 0.65, animations: {
-            switch self.state {
+            switch self.containerViewState {
             case .lectureList:
                 self.navigationItem.leftBarButtonItem!.image = #imageLiteral(resourceName: "topbarListview")
             case .timetable:
-                self.navigationItem.leftBarButtonItem!.image = #imageLiteral(resourceName: "group2Copy")
+                self.navigationItem.leftBarButtonItem!.image = #imageLiteral(resourceName: "btnLoginBack")
             }
         })
 
-        UIView.transition(with: containerView, duration: 0.65, options: .transitionFlipFromRight, animations: {
+        UIView.transition(with: containerView, duration: 0.45, options: .curveEaseInOut, animations: {
                 oldView.isHidden = true
                 newView.isHidden = false
             }, completion: { finished in
-                self.state = (self.state == .timetable) ? .lectureList : .timetable
+                self.containerViewState = (self.containerViewState == .timetable) ? .lectureList : .timetable
+                self.toggleBarItemsAccess(items: self.rightBarButtonsForTimetable)
                 self.isInAnimation = false
+                
         })
     }
     
@@ -248,6 +275,114 @@ extension STTimetableTabViewController {
         if let error = error {
             print(error.localizedDescription)
             return
+        }
+    }
+}
+
+extension STTimetableTabViewController {
+    private func toggleBarItemsAccess(items: [UIBarButtonItem]) {
+        for item in items {
+            switch containerViewState {
+            case .timetable:
+                item.tintColor = .black
+                item.isEnabled = true
+            case .lectureList:
+                item.tintColor = .clear
+                item.isEnabled = false
+            }
+        }
+    }
+}
+
+// MARK: Menu view stuff
+extension STTimetableTabViewController {
+    private func addMenuView() {
+        guard let menuVC = menuController else {
+            return
+        }
+        self.tabBarController!.view.addSubview(backgroundView)
+        self.tabBarController!.view.addSubview(menuVC.view)
+
+        menuVC.view.frame.origin.x = -(menuVC.view.frame.width)
+        
+        menuVC.view.isHidden = true
+        backgroundView.isHidden = true
+        
+        let tapGestureRecognizer = UITapGestureRecognizer(target: self, action: #selector(didTapBackgroundView(_:)))
+        
+        let panGestureRecognizer = UIPanGestureRecognizer(target: self, action: #selector(didPanGestureActionInMenuView(_:)))
+        
+        menuVC.view.addGestureRecognizer(panGestureRecognizer)
+        backgroundView.addGestureRecognizer(tapGestureRecognizer)
+    }
+    
+    @objc private func didTapBackgroundView(_ sender: UITapGestureRecognizer) {
+        toggleMenuView()
+    }
+    
+    @objc private func didPanGestureActionInMenuView(_ sender: UIPanGestureRecognizer) {
+        guard let menuView = menuController.view else { return }
+        let translation = sender.translation(in: menuView)
+        sender.setTranslation(CGPoint.zero, in: menuView)
+
+        if sender.state == .changed {
+            guard (menuView.frame.origin.x + translation.x) <= 0 else { return }
+            
+            menuView.frame.origin.x += translation.x
+        }
+        
+        let currentOrigin = menuView.frame.origin.x
+        let halfOfWidth = menuView.frame.width / 2
+        
+        if sender.state == .ended {
+            if (sender.velocity(in: menuView).x < -550) {
+                toggleMenuView()
+            } else if (currentOrigin >= -(halfOfWidth)) {
+                UIView.animate(withDuration: 0.6, delay: 0, usingSpringWithDamping: 0.92, initialSpringVelocity: 0, options: .curveEaseInOut) {
+                    self.menuController.view.frame.origin.x = 0
+                }
+            } else {
+                toggleMenuView()
+            }
+        }
+    }
+    
+    private func showBackgroundCoverView() {
+        backgroundView.isHidden = false
+        backgroundView.frame.size.width = self.containerView.frame.size.width
+        backgroundView.frame.size.height = self.tabBarController!.view.frame.size.height
+        backgroundView.backgroundColor = UIColor(red: 0, green: 0, blue: 0, alpha: 0.5)
+    }
+    
+    private func hideBackgroundCoverView() {
+        backgroundView.frame.size.width = 0
+        backgroundView.isHidden = true
+    }
+    
+    private func toggleMenuView() {
+        if (containerViewState == .lectureList) {
+            return
+        }
+        
+        switch menuControllerState {
+        case .closed:
+            showBackgroundCoverView()
+            self.menuController.view.isHidden = false
+            UIView.animate(withDuration: 0.6, delay: 0, usingSpringWithDamping: 0.92, initialSpringVelocity: 0, options: .curveEaseInOut) {
+                self.menuController.view.frame.origin.x = 0
+                
+            } completion: { finished in
+                self.menuControllerState = .opened
+            }
+            
+        case .opened:
+            UIView.animate(withDuration: 0.32, delay: 0, options: .curveEaseInOut) {
+                self.menuController.view.frame.origin.x = -(self.containerView.frame.width)
+            } completion: { finished in
+                self.hideBackgroundCoverView()
+                self.menuController.view.isHidden = true
+                self.menuControllerState = .closed
+            }
         }
     }
 }

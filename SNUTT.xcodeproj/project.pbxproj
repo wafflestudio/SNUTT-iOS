@@ -8,6 +8,15 @@
 
 /* Begin PBXBuildFile section */
 		B1EB38A2D401D55B8B513965 /* Pods_SNUTT.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 408D105AB67E80C047A51DD4 /* Pods_SNUTT.framework */; };
+		DC2BFCD426934DF9007C3F79 /* MenuTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC2BFCD226934DF9007C3F79 /* MenuTableViewCell.swift */; };
+		DC2BFCD526934DF9007C3F79 /* MenuTableViewCell.xib in Resources */ = {isa = PBXBuildFile; fileRef = DC2BFCD326934DF9007C3F79 /* MenuTableViewCell.xib */; };
+		DC546BDD2699816700A1BDD8 /* SettingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC546BDB2699816700A1BDD8 /* SettingViewController.swift */; };
+		DC546BDE2699816700A1BDD8 /* SettingViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = DC546BDC2699816700A1BDD8 /* SettingViewController.xib */; };
+		DC5B8CD726905CB40085268B /* MenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC5B8CD626905CB40085268B /* MenuViewController.swift */; };
+		DC6CD12326959A6600B3869F /* TimetablePickerViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC6CD12126959A6600B3869F /* TimetablePickerViewController.swift */; };
+		DC6CD12426959A6600B3869F /* TimetablePickerViewController.xib in Resources */ = {isa = PBXBuildFile; fileRef = DC6CD12226959A6600B3869F /* TimetablePickerViewController.xib */; };
+		DCA8D3312695D9E90009AA7A /* MenuTableViewHeaderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCA8D3302695D9E90009AA7A /* MenuTableViewHeaderView.swift */; };
+		DCA8D3482695DD1E0009AA7A /* MenuTableViewHeaderView.xib in Resources */ = {isa = PBXBuildFile; fileRef = DCA8D3472695DD1E0009AA7A /* MenuTableViewHeaderView.xib */; };
 		E10852C81B4CCD16006FD8B3 /* STLecture.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10852C61B4CCD16006FD8B3 /* STLecture.swift */; };
 		E10852C91B4CCD16006FD8B3 /* STTimetableCollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E10852C71B4CCD16006FD8B3 /* STTimetableCollectionView.swift */; };
 		E109CC791C3E8C050050399A /* STTimetableListController.swift in Sources */ = {isa = PBXBuildFile; fileRef = E109CC781C3E8C050050399A /* STTimetableListController.swift */; };
@@ -213,8 +222,17 @@
 		7540205FB7071F642F9B022F /* Pods_SNUTT_Today.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SNUTT_Today.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		923560D5D97F8A3548E9547A /* Pods-SNUTT Today.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SNUTT Today.debug.xcconfig"; path = "Target Support Files/Pods-SNUTT Today/Pods-SNUTT Today.debug.xcconfig"; sourceTree = "<group>"; };
 		A23D953E6E8C81FC5C2181B0 /* Pods.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		DC2BFCD226934DF9007C3F79 /* MenuTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuTableViewCell.swift; sourceTree = "<group>"; };
+		DC2BFCD326934DF9007C3F79 /* MenuTableViewCell.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = MenuTableViewCell.xib; sourceTree = "<group>"; };
+		DC546BDB2699816700A1BDD8 /* SettingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingViewController.swift; sourceTree = "<group>"; };
+		DC546BDC2699816700A1BDD8 /* SettingViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = SettingViewController.xib; sourceTree = "<group>"; };
+		DC5B8CD626905CB40085268B /* MenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuViewController.swift; sourceTree = "<group>"; };
+		DC6CD12126959A6600B3869F /* TimetablePickerViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TimetablePickerViewController.swift; sourceTree = "<group>"; };
+		DC6CD12226959A6600B3869F /* TimetablePickerViewController.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = TimetablePickerViewController.xib; sourceTree = "<group>"; };
 		DC822D7F26426E3300D57D58 /* SNUTTRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SNUTTRelease.entitlements; sourceTree = "<group>"; };
 		DC822DA426428D2B00D57D58 /* SNUTTDebug.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = SNUTTDebug.entitlements; sourceTree = "<group>"; };
+		DCA8D3302695D9E90009AA7A /* MenuTableViewHeaderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuTableViewHeaderView.swift; sourceTree = "<group>"; };
+		DCA8D3472695DD1E0009AA7A /* MenuTableViewHeaderView.xib */ = {isa = PBXFileReference; lastKnownFileType = file.xib; path = MenuTableViewHeaderView.xib; sourceTree = "<group>"; };
 		E0B8ADB76AB6B75793967316 /* Pods-SNUTT Today.production.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SNUTT Today.production.xcconfig"; path = "Target Support Files/Pods-SNUTT Today/Pods-SNUTT Today.production.xcconfig"; sourceTree = "<group>"; };
 		E10852C61B4CCD16006FD8B3 /* STLecture.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = STLecture.swift; sourceTree = "<group>"; };
 		E10852C71B4CCD16006FD8B3 /* STTimetableCollectionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = STTimetableCollectionView.swift; sourceTree = "<group>"; };
@@ -404,6 +422,22 @@
 			path = Pods;
 			sourceTree = "<group>";
 		};
+		DC5B8CD526905C890085268B /* Menu */ = {
+			isa = PBXGroup;
+			children = (
+				DC5B8CD626905CB40085268B /* MenuViewController.swift */,
+				DC2BFCD226934DF9007C3F79 /* MenuTableViewCell.swift */,
+				DC2BFCD326934DF9007C3F79 /* MenuTableViewCell.xib */,
+				DC6CD12126959A6600B3869F /* TimetablePickerViewController.swift */,
+				DC6CD12226959A6600B3869F /* TimetablePickerViewController.xib */,
+				DCA8D3302695D9E90009AA7A /* MenuTableViewHeaderView.swift */,
+				DCA8D3472695DD1E0009AA7A /* MenuTableViewHeaderView.xib */,
+				DC546BDB2699816700A1BDD8 /* SettingViewController.swift */,
+				DC546BDC2699816700A1BDD8 /* SettingViewController.xib */,
+			);
+			name = Menu;
+			sourceTree = "<group>";
+		};
 		E110CFCF1C883DB300ED0590 /* Notification */ = {
 			isa = PBXGroup;
 			children = (
@@ -590,6 +624,7 @@
 		E1C28B191B9C4B7B00B8C493 /* Controller */ = {
 			isa = PBXGroup;
 			children = (
+				DC5B8CD526905C890085268B /* Menu */,
 				E1F946211DB449A200CC8AF6 /* MyLectureList */,
 				E16A88451C9F782F003D94AB /* Setting */,
 				E1773CAC1C953E6D00AF36AF /* Login */,
@@ -880,6 +915,7 @@
 				E14DF21E1C3FB7820076FDDE /* STLectureTableViewCell.xib in Resources */,
 				E19A3AA01B453770007FCAD7 /* Main.storyboard in Resources */,
 				E1CD92671E46E96800AF5FE4 /* STTagFilterCollectionViewCell.xib in Resources */,
+				DC6CD12426959A6600B3869F /* TimetablePickerViewController.xib in Resources */,
 				E19A3AA51B453770007FCAD7 /* LaunchScreen.xib in Resources */,
 				E1C48BA21C79C0E300BC469E /* Localizable.strings in Resources */,
 				E1F946231DB449E300CC8AF6 /* STAddLectureButtonCell.xib in Resources */,
@@ -893,16 +929,19 @@
 				E13984331EF69111007DD319 /* STColorTableViewCell.xib in Resources */,
 				E1CAAA351CF07E7E00D16183 /* STSingleLectureButtonCell.xib in Resources */,
 				E1A664F61EED8F77003B2D43 /* STTagSearchInfoView.xib in Resources */,
+				DC546BDE2699816700A1BDD8 /* SettingViewController.xib in Resources */,
 				E1773CAE1C953E8B00AF36AF /* Login.storyboard in Resources */,
 				E1986A401F10C2D700337419 /* STSearchEmptyView.xib in Resources */,
 				E1F0CA271C75B01900A4F4ED /* STLectureSearchTableViewCell.xib in Resources */,
 				E1C48B921C7879E600BC469E /* STSingleClassTableViewCell.xib in Resources */,
+				DCA8D3482695DD1E0009AA7A /* MenuTableViewHeaderView.xib in Resources */,
 				E19A3AA21B453770007FCAD7 /* Images.xcassets in Resources */,
 				E1C48B8E1C78736000BC469E /* STColorPickTableViewCell.xib in Resources */,
 				E1F58AAC1C3D074A00F6A0FC /* STSlotCellCollectionViewCell.xib in Resources */,
 				E17825C91D560A10009ACEC3 /* config.plist in Resources */,
 				E1B381AD1C6C7DDA007E1A15 /* STTagCollectionViewCell.xib in Resources */,
 				E1F0CA1D1C7482D300A4F4ED /* delete.png in Resources */,
+				DC2BFCD526934DF9007C3F79 /* MenuTableViewCell.xib in Resources */,
 				E1F58AAA1C3CFC1C00F6A0FC /* STColumnHeaderCollectionViewCell.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1037,6 +1076,7 @@
 				E1E99A6B1C423CDB004A426A /* STEventCenter.swift in Sources */,
 				E14188D61C3E195000D4E712 /* STTimetableTabViewController.swift in Sources */,
 				E110CFDB1C888F5700ED0590 /* STTagManager.swift in Sources */,
+				DC546BDD2699816700A1BDD8 /* SettingViewController.swift in Sources */,
 				E19E23211B4691D90010DFB1 /* STLectureSearchTableViewCell.swift in Sources */,
 				E1C828771E7D1C5700E63A9B /* STTextViewTableViewCell.swift in Sources */,
 				E1D0FB6B1C86D47900ACDC2F /* STColor.swift in Sources */,
@@ -1050,6 +1090,7 @@
 				E1EE1B311CCCDE20003DF250 /* STDefaults.swift in Sources */,
 				E16A88591C9FC59F003D94AB /* STTermAndConditionViewController.swift in Sources */,
 				E17825CD1D577CD8009ACEC3 /* STNotificationRouter.swift in Sources */,
+				DC6CD12326959A6600B3869F /* TimetablePickerViewController.swift in Sources */,
 				E1A99D931CB112EE00953A4B /* STRedButtonTableViewCell.swift in Sources */,
 				E19ABD711EAB49BE0051B1C7 /* STOnBoardingViewController.swift in Sources */,
 				E1D0FB651C86CDCE00ACDC2F /* STColorPickerTableViewController.swift in Sources */,
@@ -1079,6 +1120,7 @@
 				E1B34A501EB2278C004C5E5E /* STRegisterViewController.swift in Sources */,
 				E10852C91B4CCD16006FD8B3 /* STTimetableCollectionView.swift in Sources */,
 				E1526E971E51742600A58F40 /* STPrivacyPolicyViewController.swift in Sources */,
+				DCA8D3312695D9E90009AA7A /* MenuTableViewHeaderView.swift in Sources */,
 				E1C48BB01C79C45500BC469E /* STQuarter.swift in Sources */,
 				E16643551B4630B500387EF8 /* STColumnHeaderCollectionViewCell.swift in Sources */,
 				E1C48B941C787A3C00BC469E /* STSingleClassTableViewCell.swift in Sources */,
@@ -1088,6 +1130,7 @@
 				E16A88531C9FB98F003D94AB /* STSupportViewController.swift in Sources */,
 				E16A88571C9FC4AD003D94AB /* STSettingViewController.swift in Sources */,
 				E110CFD51C883FC000ED0590 /* STNotificationTableViewCell.swift in Sources */,
+				DC2BFCD426934DF9007C3F79 /* MenuTableViewCell.swift in Sources */,
 				E1773CB41C95B05800AF36AF /* STLoginViewController.swift in Sources */,
 				E110CFDF1C88916400ED0590 /* STTagRouter.swift in Sources */,
 				E16A88511C9F97EB003D94AB /* STLicenseViewController.swift in Sources */,
@@ -1124,6 +1167,7 @@
 				E149920F1C549D7900DC6756 /* STSearchRouter.swift in Sources */,
 				E1C48BB21C79C8E200BC469E /* STDay.swift in Sources */,
 				E18F2E4E1C5E610F00114ADF /* STSearchBar.swift in Sources */,
+				DC5B8CD726905CB40085268B /* MenuViewController.swift in Sources */,
 				E10CBEDF1C7B6EC800E8FE26 /* STSingleLectureTableViewController.swift in Sources */,
 				E133794F1D41E26C00AD10F4 /* STRouter.swift in Sources */,
 				E1B381A71C6C4AA0007E1A15 /* STTagCollectionView.swift in Sources */,
@@ -1368,7 +1412,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.3.0;
 				OTHER_SWIFT_FLAGS = "$(inherited) \"-D\" \"COCOAPODS\" ";
 				PRODUCT_BUNDLE_IDENTIFIER = com.wafflestudio.snutt;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1400,7 +1444,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.3.0;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = com.wafflestudio.snutt;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1539,7 +1583,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.3.0;
 				ONLY_ACTIVE_ARCH = NO;
 				PRODUCT_BUNDLE_IDENTIFIER = "${BUNDLE_IDENTIFIER}";
 				PRODUCT_NAME = "$(TARGET_NAME)";
